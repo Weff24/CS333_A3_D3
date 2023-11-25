@@ -1,0 +1,171 @@
+<html>
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.states {
+  fill: #ccc;
+  stroke: #fff;
+}
+
+.symbol {
+  fill-opacity: .8;
+  stroke: #fff;
+}
+
+.symbol:hover {
+  fill: red;
+}
+
+
+div.tooltip {
+         position: absolute;
+         text-align: center;
+         width: 200px;
+         height: 28px;
+         font: 12px sans-serif;
+         background: lightsteelblue;
+         border: 0px;
+         pointer-events: none;
+}
+
+
+</style>
+<body>
+<!--Rather than loading v3 or v4, loading individual modules to ensure compatibility with v4 functions (loads newest version of each)-->
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-geo.v1.min.js"></script>
+<script src="https://d3js.org/d3-selection.v1.min.js"></script>
+<script src="https://d3js.org/d3-array.v1.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/d3-collection.v0.1.min.js"></script>
+<script src="https://d3js.org/d3-dispatch.v0.4.min.js"></script>
+<script src="https://d3js.org/d3-dsv.v0.3.min.js"></script>
+<script src="https://d3js.org/d3-request.v0.4.min.js"></script>
+<script src="https://d3js.org/d3-queue.v3.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geoAlbersUsa();
+var path = d3.geoPath()
+	.projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+
+// load up the json files, and when we're done, call ready
+d3.queue()
+    .defer(d3_request.json, "states.json")
+    .defer(d3_request.json, "us-state-centroids.json")
+    .await(ready);
+
+// keep these around for later
+var us,centroid;
+
+var sizeSqrt,colorSqrt;
+
+function ready(error, u, c) {
+
+  // store the values so we can use them later
+   states = u
+   centroid = c
+
+  
+
+  // draw the states
+  svg.append("path")
+      .attr("class", "states")
+      .datum(topojson.feature(states, states.objects.usStates))
+      .attr("d", path);
+
+
+  // draw the symbols on top
+  	svg.selectAll(".symbol")
+      		.data(centroid.features.sort(function(a, b) { return b.properties.population - a.properties.population; }))
+    		.enter().append("path")
+      		.attr("class", "symbol")
+      		.attr("fill","green")
+      		.attr("d", path.pointRadius(function(d) { return 10 }))
+		.on("mouseover", function(d) {
+                      tooltip.style("opacity", .9);
+                        tooltip.html("Name: " + d.properties.name + " | Population: " + d.properties.population)
+                              .style("left", (d3.event.pageX) + "px")
+                              .style("top", (d3.event.pageY - 28) + "px");
+                 })
+                .on("mouseout", function(d) {
+                        tooltip.style("opacity", 0);
+                });
+
+   colorSqrt = d3.scaleSqrt()
+         .domain([0,d3.max(centroid.features,(function(d) { return d.properties.population; }))])
+         .range(["green","blue"]);
+
+   sizeSqrt = d3.scaleSqrt()
+         .domain([0,d3.max(centroid.features,(function(d) { return d.properties.population; }))])
+         .range([5,20]);
+
+}
+
+function recolor(color) {
+
+  // grab the symbol objects and modify their color 
+  // notice we don't need "enter" or "append" the objects are already there
+   svg.selectAll(".symbol")
+      .attr("fill",color)
+      .attr("d", path.pointRadius(function(d) { return 10 })); //change size back if it has been altered
+}
+
+var sizePatt = RegExp("size");
+var colPatt = RegExp("color");
+
+function popToEncoding(encode) {
+    var resultSize = sizePatt.test(encode); 
+    var resultCol = colPatt.test(encode); 
+	 if(resultSize && resultCol){
+		//pop to size and color
+		console.log("size and color");
+   		svg.selectAll(".symbol")
+      			.attr("fill",function(d) { return colorSqrt(d.properties.population); })
+      			.attr("d",path.pointRadius(function(d) { return sizeSqrt(d.properties.population); }));
+	}else if(resultSize){
+		//pop to size
+   		svg.selectAll(".symbol")
+      			.attr("d",path.pointRadius(function(d) { return sizeSqrt(d.properties.population); }));
+	}else{ //color
+   		svg.selectAll(".symbol")
+      			.attr("fill",function(d) { return colorSqrt(d.properties.population); })
+		
+	}
+
+
+}
+
+
+
+   
+
+</script>
+  <form>
+  <table><tr><td>
+        <input type="Button" value="Reset" onclick="recolor('green')"/>
+</td><td>
+        <input type="Button" value="Map Population to Color" onclick="popToEncoding('color')"/>
+</td><td>
+        <input type="Button" value="Map Population to Size" onclick="popToEncoding('size')"/>
+</td><td>
+        <input type="Button" value="Map Population to Color and Size" onclick="popToEncoding('size_color')"/>
+</td></tr>
+</table>
+</form>
+
+</body>
+</html>
+
