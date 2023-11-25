@@ -2,170 +2,464 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <style>
+  .states {
+    fill: #ccc;
+    stroke: #fff;
+  }
 
-.states {
-  fill: #ccc;
-  stroke: #fff;
-}
+  .symbol {
+    fill-opacity: .8;
+    stroke: #fff;
+  }
 
-.symbol {
-  fill-opacity: .8;
-  stroke: #fff;
-}
+  .symbol:hover {
+    fill: red;
+  }
 
-.symbol:hover {
-  fill: red;
-}
-
-
-div.tooltip {
-         position: absolute;
-         text-align: center;
-         width: 200px;
-         height: 28px;
-         font: 12px sans-serif;
-         background: lightsteelblue;
-         border: 0px;
-         pointer-events: none;
-}
-
-
+  div.tooltip {
+    display: grid;
+    align-content: center;
+    position: absolute;
+    text-align: center;
+    width: 200px;
+    height: 60px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    pointer-events: none;
+  }
 </style>
+
 <body>
-<!--Rather than loading v3 or v4, loading individual modules to ensure compatibility with v4 functions (loads newest version of each)-->
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="https://d3js.org/d3-geo.v1.min.js"></script>
-<script src="https://d3js.org/d3-selection.v1.min.js"></script>
-<script src="https://d3js.org/d3-array.v1.min.js"></script>
-<script src="http://d3js.org/topojson.v1.min.js"></script>
-<script src="https://d3js.org/d3-collection.v0.1.min.js"></script>
-<script src="https://d3js.org/d3-dispatch.v0.4.min.js"></script>
-<script src="https://d3js.org/d3-dsv.v0.3.min.js"></script>
-<script src="https://d3js.org/d3-request.v0.4.min.js"></script>
-<script src="https://d3js.org/d3-queue.v3.min.js"></script>
-<script>
+  <!--Rather than loading v3 or v4, loading individual modules to ensure compatibility with v4 functions (loads newest version of each)-->
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <!-- <script src="https://d3js.org/d3-geo.v1.min.js"></script> -->
+  <!-- <script src="https://d3js.org/d3-selection.v1.3.min.js"></script> -->
+  <!-- <script src="https://d3js.org/d3-array.v1.min.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+  <script src="https://d3js.org/d3-collection.v0.1.min.js"></script>
+  <script src="https://d3js.org/d3-dispatch.v0.4.min.js"></script>
+  <script src="https://d3js.org/d3-dsv.v0.3.min.js"></script>
+  <script src="https://d3js.org/d3-request.v0.4.min.js"></script>
+  <script src="https://d3js.org/d3-queue.v3.min.js"></script> -->
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+  <!-- <script>
 
-var width = 960,
-    height = 500;
+    var width = 960,
+      height = 500;
 
-var projection = d3.geoAlbersUsa();
-var path = d3.geoPath()
-	.projection(projection);
+    var projection = d3.geoAlbersUsa();
+    var path = d3.geoPath()
+      .projection(projection);
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
+    var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
-var tooltip = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-
-// load up the json files, and when we're done, call ready
-d3.queue()
-    .defer(d3_request.json, "states.json")
-    .defer(d3_request.json, "us-state-centroids.json")
-    .await(ready);
-
-// keep these around for later
-var us,centroid;
-
-var sizeSqrt,colorSqrt;
-
-function ready(error, u, c) {
-
-  // store the values so we can use them later
-   states = u
-   centroid = c
-
-  
-
-  // draw the states
-  svg.append("path")
-      .attr("class", "states")
-      .datum(topojson.feature(states, states.objects.usStates))
-      .attr("d", path);
+    var tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
 
 
-  // draw the symbols on top
-  	svg.selectAll(".symbol")
-      		.data(centroid.features.sort(function(a, b) { return b.properties.population - a.properties.population; }))
-    		.enter().append("path")
-      		.attr("class", "symbol")
-      		.attr("fill","green")
-      		.attr("d", path.pointRadius(function(d) { return 10 }))
-		.on("mouseover", function(d) {
-                      tooltip.style("opacity", .9);
-                        tooltip.html("Name: " + d.properties.name + " | Population: " + d.properties.population)
-                              .style("left", (d3.event.pageX) + "px")
-                              .style("top", (d3.event.pageY - 28) + "px");
-                 })
-                .on("mouseout", function(d) {
-                        tooltip.style("opacity", 0);
-                });
+    // load up the json files, and when we're done, call ready
+    d3.queue()
+      .defer(d3_request.json, "states.json")
+      .defer(d3_request.json, "us-state-centroids.json")
+      .await(ready);
 
-   colorSqrt = d3.scaleSqrt()
-         .domain([0,d3.max(centroid.features,(function(d) { return d.properties.population; }))])
-         .range(["green","blue"]);
+    // keep these around for later
+    var us, centroid;
 
-   sizeSqrt = d3.scaleSqrt()
-         .domain([0,d3.max(centroid.features,(function(d) { return d.properties.population; }))])
-         .range([5,20]);
+    var sizeSqrt, colorSqrt;
 
-}
+    function ready(error, u, c) {
 
-function recolor(color) {
-
-  // grab the symbol objects and modify their color 
-  // notice we don't need "enter" or "append" the objects are already there
-   svg.selectAll(".symbol")
-      .attr("fill",color)
-      .attr("d", path.pointRadius(function(d) { return 10 })); //change size back if it has been altered
-}
-
-var sizePatt = RegExp("size");
-var colPatt = RegExp("color");
-
-function popToEncoding(encode) {
-    var resultSize = sizePatt.test(encode); 
-    var resultCol = colPatt.test(encode); 
-	 if(resultSize && resultCol){
-		//pop to size and color
-		console.log("size and color");
-   		svg.selectAll(".symbol")
-      			.attr("fill",function(d) { return colorSqrt(d.properties.population); })
-      			.attr("d",path.pointRadius(function(d) { return sizeSqrt(d.properties.population); }));
-	}else if(resultSize){
-		//pop to size
-   		svg.selectAll(".symbol")
-      			.attr("d",path.pointRadius(function(d) { return sizeSqrt(d.properties.population); }));
-	}else{ //color
-   		svg.selectAll(".symbol")
-      			.attr("fill",function(d) { return colorSqrt(d.properties.population); })
-		
-	}
-
-
-}
+      // store the values so we can use them later
+      states = u
+      centroid = c
 
 
 
-   
+      // draw the states
+      svg.append("path")
+        .attr("class", "states")
+        .datum(topojson.feature(states, states.objects.usStates))
+        .attr("d", path);
 
-</script>
-  <form>
-  <table><tr><td>
-        <input type="Button" value="Reset" onclick="recolor('green')"/>
-</td><td>
-        <input type="Button" value="Map Population to Color" onclick="popToEncoding('color')"/>
-</td><td>
-        <input type="Button" value="Map Population to Size" onclick="popToEncoding('size')"/>
-</td><td>
-        <input type="Button" value="Map Population to Color and Size" onclick="popToEncoding('size_color')"/>
-</td></tr>
-</table>
-</form>
+
+      // draw the symbols on top
+      svg.selectAll(".symbol")
+        .data(centroid.features.sort(function (a, b) { return b.properties.population - a.properties.population; }))
+        .enter().append("path")
+        .attr("class", "symbol")
+        .attr("fill", "green")
+        .attr("d", path.pointRadius(function (d) { return 10 }))
+        .on("mouseover", function (d) {
+          tooltip.style("opacity", .9);
+          tooltip.html("Name: " + d.properties.name + " | Population: " + d.properties.population)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function (d) {
+          tooltip.style("opacity", 0);
+        });
+
+      colorSqrt = d3.scaleSqrt()
+        .domain([0, d3.max(centroid.features, (function (d) { return d.properties.population; }))])
+        .range(["green", "blue"]);
+
+      sizeSqrt = d3.scaleSqrt()
+        .domain([0, d3.max(centroid.features, (function (d) { return d.properties.population; }))])
+        .range([5, 20]);
+
+    }
+
+    function recolor(color) {
+
+      // grab the symbol objects and modify their color 
+      // notice we don't need "enter" or "append" the objects are already there
+      svg.selectAll(".symbol")
+        .attr("fill", color)
+        .attr("d", path.pointRadius(function (d) { return 10 })); //change size back if it has been altered
+    }
+
+    var sizePatt = RegExp("size");
+    var colPatt = RegExp("color");
+
+    function popToEncoding(encode) {
+      var resultSize = sizePatt.test(encode);
+      var resultCol = colPatt.test(encode);
+      if (resultSize && resultCol) {
+        //pop to size and color
+        console.log("size and color");
+        svg.selectAll(".symbol")
+          .attr("fill", function (d) { return colorSqrt(d.properties.population); })
+          .attr("d", path.pointRadius(function (d) { return sizeSqrt(d.properties.population); }));
+      } else if (resultSize) {
+        //pop to size
+        svg.selectAll(".symbol")
+          .attr("d", path.pointRadius(function (d) { return sizeSqrt(d.properties.population); }));
+      } else { //color
+        svg.selectAll(".symbol")
+          .attr("fill", function (d) { return colorSqrt(d.properties.population); })
+
+      }
+
+
+    }
+  </script> -->
+  <div>
+    <svg id="world_map" width="800" height="600"></svg>
+  </div>
+  <div>
+    <svg id="population_plot" width="800" height="600"></svg>
+  </div>
+
+
+  <script>
+    // The svg
+    let svg = d3.select("#world_map");
+    let width = +svg.attr("width");
+    let height = +svg.attr("height");
+
+    // Map and projection
+    let path = d3.geoPath();
+    let projection = d3.geoMercator()
+      .scale(70)
+      .center([0, 0]);
+    // .translate([width / 2, 0]);
+
+    // Data and color scale
+    let countriesData = {}
+    let data = d3.map();
+    let colorScale = d3.scaleThreshold()
+      .domain([100000, 1000000, 10000000, 30000000, 100000000, 500000000])
+      .range(d3.schemeBlues[7]);
+
+    // Selected data
+    let selectedCountries = [];
+
+    // basic tooltip
+    let tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+    // Country Coordinates from countries of the world
+    let countryCoordinates = d3.map();
+    // Country Coordinates from countries of the world using alternative country names
+
+    let countryCoordinatesAlt = d3.map();
+
+
+    // Load external data and boot
+    d3.queue()
+      .defer(d3.json, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
+      // .defer(d3.csv, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world_population.csv", function (d) { data.set(d.code, +d.pop); })
+      .defer(d3.csv, "countries of the world cleaned.csv", function (d) {
+        let countryNames = d.Country.replace(/[$"]|\s+$/g, "").trim()
+        let countryAltNames = d.Country_cleaned_name.replace(/[$"]|\s+$/g, "").trim()
+
+        countryCoordinates.set(countryNames, { latitude: +d.latitude, longitude: +d.longitude });
+        countryCoordinatesAlt.set(countryAltNames, { latitude: +d.latitude, longitude: +d.longitude });
+        countriesData[countryAltNames] = d;
+      })
+      .await(ready);
+
+    function ready(error, topojson) {
+      console.log(countriesData)
+
+      let mouseOver = function (d) {
+
+        // OLD CODE TO DISPLAY TOOLTIP AT COUNTRY COORDINATES
+
+        // let selectedCountryName = d3.select(this).data()[0].properties.name.replace(/[$"]|\s+$/g, "").trim();
+        // //console.log(selectedCountryName);
+        // //console.log(countryCoordinatesAlt);
+        // let coordinates = countryCoordinates.get(selectedCountryName);
+        // // console.log(coordinates);
+        // if (!coordinates) {
+        //   coordinates = countryCoordinatesAlt.get(selectedCountryName);
+        // }
+        // if (coordinates) {
+        //   tooltip.transition()
+        //     .duration(200)
+        //     .style("opacity", .9)
+        //     .style("left", (zoomLevel * (coordinates.longitude + xMove) + width / 2) + "px")
+        //     .style("top", (zoomLevel * (-coordinates.latitude - yMove) + height / 2) + "px");
+        //   tooltip.html(d.properties.name);
+        // } else {
+        //   console.log("MISSING NAME: " + selectedCountryName);
+        // }
+
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", .9)
+          .style("left", event.pageX + "px")
+          .style("top", (event.pageY + 10) + "px");
+        // tooltip.html(d.properties.name + "<br>Population: " + countriesData[d.countryAltNames]);
+        if (Object.keys(countriesData).includes(d.properties.name)) {
+          tooltip.html(countriesData[d.properties.name].Country
+            + "<br>Population: " + countriesData[d.properties.name]["Population"]
+            + "<br>GDP Per Capita: $" + countriesData[d.properties.name]["GDP ($ per capita)"]
+            + "<br>Literacy Rate: " + countriesData[d.properties.name]["Literacy (%)"].replace(",", ".") + "%");
+        } else {
+          tooltip.html(d.properties.name + "<br>No data (Country not in dataset)");
+        }
+
+
+
+
+        d3.selectAll(".Country")
+          .transition()
+          .duration(100)
+          .style("fill", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+          })
+          .style("stroke", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+          });
+
+        d3.select(this)
+          .transition()
+          .duration(100)
+          .style("fill", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "orange" : "red";
+          })
+          .style("stroke", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+          });
+      };
+
+      let mouseLeave = function (d) {
+        d3.selectAll(".Country")
+          .transition()
+          .duration(100)
+          .style("fill", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+          })
+          .style("stroke", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+          });
+
+        d3.select(this)
+          .transition()
+          .duration(100)
+          .style("fill", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+          })
+          .style("stroke", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+          });
+      };
+
+      let mouseClick = function (d) {
+        // Store the name of the selected country
+        if (selectedCountries.includes(d.properties.name)) {
+          // Remove the country from the list
+          selectedCountries = selectedCountries.filter(country => country !== d.properties.name);
+        } else {
+          // Add the country to the list
+          selectedCountries.push(d.properties.name);
+        }
+
+        // Reset the color of all countries
+        d3.selectAll(".Country")
+          .transition()
+          .duration(100)
+          .style("fill", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+          })
+          .style("stroke", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+          });
+
+        d3.select(this)
+          .transition()
+          .duration(100)
+          .style("fill", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "orange" : "red";
+          })
+          .style("stroke", function (country) {
+            return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+          });
+      };
+
+      // Draw the map
+      svg.append("g")
+        .selectAll("path")
+        .data(topojson.features)
+        .enter()
+        .append("path")
+        // draw each country
+        .attr("d", d3.geoPath()
+          .projection(projection)
+        )
+        // set the color of each country
+        .style("fill", "#ECECEC")
+        .style("stroke", "grey")
+        .attr("class", function (d) { return "Country" })
+        .on("mouseover", mouseOver)
+        .on("mouseleave", mouseLeave)
+        .on("click", mouseClick);
+
+      let zoom = d3.zoom()
+        .scaleExtent([1, 10])
+        .translateExtent([[0, 0], [800, 600]])
+        .on('zoom', () => {
+          svg.selectAll('path').attr('transform', d3.event.transform);
+          svg.attr('stroke-width', 2 / d3.event.transform.k);
+        });
+      svg.call(zoom);
+
+
+      let widthPlot = 800;
+      let heightPlot = 800;
+      let marginTop = 20;
+      let marginRight = 20;
+      let marginBottom = 20;
+      let marginLeft = 20;
+      let radius = 3;
+      let padding = 2;
+
+      console.log()
+      let xScale = d3.scaleLog()
+        .domain(d3.extent(Object.values(countriesData).map(d => +d["Population"])))
+        .range([marginLeft, width - marginRight]);
+
+      let svg2 = d3.select("#population_plot")
+        .attr("width", widthPlot)
+        .attr("height", heightPlot)
+        .attr("viewBox", [0, 600, widthPlot, heightPlot])
+        .attr("style", "max-width: 100%; height: auto;");
+
+      svg2.append("g")
+        .attr("transform", `translate(0,${heightPlot - marginBottom})`)
+        .call(d3.axisBottom(xScale).tickSizeOuter(0));
+
+      // svg2.append("text")    
+      //   .style("font-size", "20px")
+      //   .style("font-weight", "bold")
+      //   .text("Population Distribution by Country");
+
+      svg2.append("g")
+        .selectAll()
+        .data(dodge(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScale(d["Population"]) }))
+        .enter()
+        .append("circle")
+        .attr("cx", d => d.x)
+        .attr("cy", d => heightPlot - marginBottom - radius - padding - d.y)
+        .attr("r", radius);
+      // .append("title")
+      // .text(d => d.data.Country_cleaned_name);
+
+      function dodge(data, { radius = 1, x }) {
+        const radius2 = radius ** 2;
+        const circles = data.map((d, i, data) => ({ x: +xScale(d["Population"]), data: d })).sort((a, b) => a.x - b.x);
+        // circles.forEach(circle => {
+        //   console.log(circle);
+        // });
+        const epsilon = 1e-3;
+        let head = null, tail = null;
+
+        // Returns true if circle ⟨x,y⟩ intersects with any circle in the queue.
+        function intersects(x, y) {
+          let a = head;
+          while (a) {
+            if (radius2 - epsilon > (a.x - x) ** 2 + (a.y - y) ** 2) {
+              return true;
+            }
+            a = a.next;
+          }
+          return false;
+        }
+
+        // Place each circle sequentially.
+        for (const b of circles) {
+          // Remove circles from the queue that can’t intersect the new circle b.
+          while (head && head.x < b.x - radius2) head = head.next;
+
+          // Choose the minimum non-intersecting tangent.
+          if (intersects(b.x, b.y = 0)) {
+            let a = head;
+            b.y = Infinity;
+            do {
+              let y = a.y + Math.sqrt(radius2 - (a.x - b.x) ** 2);
+              if (y < b.y && !intersects(b.x, y)) b.y = y;
+              a = a.next;
+            } while (a);
+          }
+
+          // Add b to the queue.
+          b.next = null;
+          if (head === null) head = tail = b;
+          else tail = tail.next = b;
+        }
+        return circles;
+      }
+    }
+
+  </script>
+
+  <!-- <form>
+    <table>
+      <tr>
+        <td>
+          <input type="Button" value="Reset" onclick="recolor('green')" />
+        </td>
+        <td>
+          <input type="Button" value="Map Population to Color" onclick="popToEncoding('color')" />
+        </td>
+        <td>
+          <input type="Button" value="Map Population to Size" onclick="popToEncoding('size')" />
+        </td>
+        <td>
+          <input type="Button" value="Map Population to Color and Size" onclick="popToEncoding('size_color')" />
+        </td>
+      </tr>
+    </table>
+  </form> -->
 
 </body>
-</html>
 
+</html>
