@@ -151,7 +151,15 @@
   </script> -->
   <div id="vis_container">
     <div>
-      <svg id="world_map" width="800" height="400"></svg>
+      <tr>
+        <td>
+          <input type="Button" value="Clear Selections" onclick="resetSelection()" />
+        </td>
+      </tr>
+    </div>
+
+    <div>
+      <svg id="world_map" width="800" height="350"></svg>
     </div>
     <div>
       <svg id="population_plot" class="brush_container" width="800" height="600"></svg>
@@ -181,6 +189,13 @@
       .domain([100000, 1000000, 10000000, 30000000, 100000000, 500000000])
       .range(d3.schemeBlues[7]);
 
+    // Colors 
+    let selectedColor = "#f25050";
+    let unselectedColor = "#ECECEC";
+    let hoverColor = "#2986CC";
+    let dotColor = "#B5B5B5";
+    let borderColor = "#3F3F3F";
+
     // Selected data
     let selectedCountries = [];
 
@@ -200,7 +215,7 @@
     d3.queue()
       .defer(d3.json, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
       // .defer(d3.csv, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world_population.csv", function (d) { data.set(d.code, +d.pop); })
-      .defer(d3.csv, "countries of the world very clean.csv", function (d) {
+      .defer(d3.csv, "countries of the world very very clean.csv", function (d) {
         let countryNames = d["Country"].replace(/[$"]|\s+$/g, "").trim()
         let countryAltNames = d["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim()
 
@@ -210,6 +225,21 @@
         countriesData[countryAltNames] = d;
       })
       .await(ready);
+
+    let drawMap = null;
+    let drawPopulationPlot = null;
+    let colorPlot = null;
+    let brushPopulation = this.brush;
+
+    let resetSelection = () => {
+      selectedCountries = [];
+
+      d3.selectAll(".selection").style("display", "none");
+
+      colorPlot();
+      drawMap();
+      drawPopulationPlot();
+    }
 
     function ready(error, topojson) {
       // console.log(countriesData)
@@ -246,7 +276,7 @@
           .style("top", (event.pageY + 10) + "px");
         // tooltip.html(d.properties.name + "<br>Population: " + countriesData[d.countryAltNames]);
         if (Object.keys(countriesData).includes(d.properties.name)) {
-          tooltip.html(countriesData[d.properties.name].Country
+          tooltip.html(d.properties.name //countriesData[d.properties.name].Country
             + "<br>Population: " + countriesData[d.properties.name]["Population"]
             + "<br>GDP Per Capita: $" + countriesData[d.properties.name]["GDP ($ per capita)"]
             + "<br>Literacy Rate: " + countriesData[d.properties.name]["Literacy (%)"].replace(",", ".") + "%");
@@ -259,19 +289,19 @@
           .transition()
           .duration(100)
           .style("fill", function (country) {
-            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+            return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
           })
-          // .style("stroke", function (country) {
-          //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
-          // });
+        // .style("stroke", function (country) {
+        //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+        // });
 
         d3.select(this)
           .transition()
           .duration(100)
-          .style("fill", "red")
-          // .style("stroke", function (country) {
-          //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
-          // });
+          .style("fill", hoverColor)
+        // .style("stroke", function (country) {
+        //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+        // });
       };
 
       let mouseLeave = function (d) {
@@ -285,21 +315,21 @@
           .transition()
           .duration(100)
           .style("fill", function (country) {
-            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+            return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
           })
-          // .style("stroke", function (country) {
-          //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
-          // });
+        // .style("stroke", function (country) {
+        //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+        // });
 
         d3.select(this)
           .transition()
           .duration(100)
           .style("fill", function (country) {
-            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+            return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
           })
-          // .style("stroke", function (country) {
-          //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
-          // });
+        // .style("stroke", function (country) {
+        //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+        // });
       };
 
       let mouseClick = function (d) {
@@ -317,26 +347,30 @@
           .transition()
           .duration(100)
           .style("fill", function (country) {
-            return selectedCountries.includes(country.properties.name) ? "orange" : "#ECECEC";
+            return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
           })
-          // .style("stroke", function (country) {
-          //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
-          // });
+        // .style("stroke", function (country) {
+        //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+        // });
 
         d3.select(this)
           .transition()
           .duration(100)
           .style("fill", function (country) {
-            return selectedCountries.includes(country.properties.name) ? "orange" : "red";
+            return selectedCountries.includes(country.properties.name) ? selectedColor : hoverColor;
           })
-          // .style("stroke", function (country) {
-          //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
-          // });
+        // .style("stroke", function (country) {
+        //   return selectedCountries.includes(country.properties.name) ? "black" : "grey";
+        // });
+
+        colorPlot();
       };
 
 
       // Draw the map
-      let drawMap = () => {
+      drawMap = () => {
+        svg.select('g').remove();
+
         svg.append("g")
           .selectAll("path")
           .data(topojson.features)
@@ -347,20 +381,21 @@
             .projection(projection)
           )
           // set the color of each country
-          .style("fill", "#ECECEC")
-          .style("stroke", "#585858")
+          .style("fill", unselectedColor)
+          .style("stroke", borderColor)
           .attr("class", function (d) { return "Country" })
           .on("mouseover", mouseOver)
           .on("mouseleave", mouseLeave)
           .on("click", mouseClick);
 
         let zoom = d3.zoom()
-          .scaleExtent([1, 10])
+          .scaleExtent([1, 12])
           .translateExtent([[0, 0], [800, 400]])
           .on('zoom', () => {
             svg.selectAll('path').attr('transform', d3.event.transform);
             svg.attr('stroke-width', 1 / d3.event.transform.k);
           });
+        svg.transition().duration(1000).call(zoom.transform, d3.zoomIdentity);
         svg.call(zoom);
       }
 
@@ -378,7 +413,7 @@
         .domain(d3.extent(Object.values(countriesData).map(d => +d["Population"])))
         .range([marginLeft, width - marginRight]);
 
-      let drawPopulationPlot = () => {
+      drawPopulationPlot = () => {
         let svg2 = d3.select("#population_plot")
           .attr("width", widthPlot)
           .attr("height", heightPlot)
@@ -413,9 +448,7 @@
           .attr("cx", d => d.x)
           .attr("cy", d => heightPlot - marginBottom - radius - padding - d.y)
           .attr("r", radius)
-          .attr("fill", "#BBBBBB");
-        // .append("title")
-        // .text(d => d.data.Country_cleaned_name);
+          .attr("fill", dotColor);
 
         function dodge(data, { radius = 1, x }) {
           const radius2 = radius ** 2;
@@ -476,28 +509,32 @@
           .transition()
           .duration(25)
           .style("fill", (d) => {
-            if (selectedCountries.includes(d.properties.name)) {
-              return "orange";
-            } else {
-              return "#ECECEC";
-            }
+            return selectedCountries.includes(d.properties.name) ? selectedColor : unselectedColor;
           })
       };
 
-      let colorPlot = () => {
+      colorPlot = () => {
         d3.selectAll("circle")
           .transition()
           .duration(25)
           .style("fill", d => {
             if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
-              return "orange";
+              return selectedColor;
             } else {
-              return "#BBBBBB";
+              return dotColor;
             }
-          });
+          })
+          .style("stroke", d => {
+            if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
+              return borderColor;
+            } else {
+              return null;
+            }
+          })
+          .style("stroke-width", 1.5);
       };
 
-      let brush = d3.brushX()
+      brushPopulation = d3.brushX()
         .extent([[0, 0], [widthPlot, heightPlot]])
         .on("brush end", (event) => {
           if (event.selection === null) {
@@ -533,7 +570,7 @@
           .enter()
           .append("g")
           .attr("class", "brushContainer")
-          .call(brush);
+          .call(brushPopulation);
 
         // circlesContainer.selectAll("circle.dot")
         //   .data(countriesData, d => d["Country_cleaned_name"]) // <-- provide a 🔑 key function for joining data to SVG elements
