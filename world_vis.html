@@ -2,6 +2,11 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <style>
+  #world_map {
+    border: solid 1px black;
+    flex: 1;
+  }
+
   .states {
     fill: #ccc;
     stroke: #fff;
@@ -164,6 +169,9 @@
     <div>
       <svg id="population_plot" class="brush_container" width="800" height="600"></svg>
     </div>
+    <div>
+      <svg id="scat_plot" width="800" height="350"></svg>
+    </div>
   </div>
 
 
@@ -180,7 +188,7 @@
     let projection = d3.geoMercator()
       .scale(70)
       .center([0, 0]);
-    // .translate([width / 2, 0]);
+    // .translate([-width / 2, 0]);
 
     // Data and color scale
     let countriesData = {}
@@ -245,29 +253,6 @@
       // console.log(countriesData)
 
       let mouseOver = function (d) {
-
-        // console.log(selectedCountries);
-
-        // OLD CODE TO DISPLAY TOOLTIP AT COUNTRY COORDINATES
-
-        // let selectedCountryName = d3.select(this).data()[0].properties.name.replace(/[$"]|\s+$/g, "").trim();
-        // //console.log(selectedCountryName);
-        // //console.log(countryCoordinatesAlt);
-        // let coordinates = countryCoordinates.get(selectedCountryName);
-        // // console.log(coordinates);
-        // if (!coordinates) {
-        //   coordinates = countryCoordinatesAlt.get(selectedCountryName);
-        // }
-        // if (coordinates) {
-        //   tooltip.transition()
-        //     .duration(200)
-        //     .style("opacity", .9)
-        //     .style("left", (zoomLevel * (coordinates.longitude + xMove) + width / 2) + "px")
-        //     .style("top", (zoomLevel * (-coordinates.latitude - yMove) + height / 2) + "px");
-        //   tooltip.html(d.properties.name);
-        // } else {
-        //   console.log("MISSING NAME: " + selectedCountryName);
-        // }
 
         tooltip.transition()
           .duration(200)
@@ -390,7 +375,7 @@
 
         let zoom = d3.zoom()
           .scaleExtent([1, 12])
-          .translateExtent([[0, 0], [800, 400]])
+          .translateExtent([[0, 0], [width, height]])
           .on('zoom', () => {
             svg.selectAll('path').attr('transform', d3.event.transform);
             svg.attr('stroke-width', 1 / d3.event.transform.k);
@@ -398,7 +383,6 @@
         svg.transition().duration(1000).call(zoom.transform, d3.zoomIdentity);
         svg.call(zoom);
       }
-
 
       // Draw population plot function
       let widthPlot = 800;
@@ -423,7 +407,7 @@
 
         svg2.append("g")
           .attr("transform", `translate(0,${heightPlot - marginBottom})`)
-          .call(d3.axisBottom(xScalePopulation).tickSizeOuter(0));
+          .call(d3.axisBottom(xScalePopulation).ticks(5, ",.0f").tickSize(10));
 
         // Append x-axis label
         svg2.append("text")
@@ -441,7 +425,7 @@
           .text("Population Distribution by Country");
 
         svg2.append("g")
-          .selectAll("path")
+          .selectAll("dot")
           .data(dodge(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScalePopulation(d["Population"]) }))
           .enter()
           .append("circle")
@@ -650,6 +634,62 @@
 
       // chartsContainer.select("#world_map")
       //   .call(makeWorldMap);
+
+
+
+
+
+
+      // Draw population plot function
+      let widthScat = 800;
+      let heightScat = 750;
+      // let marginTop = 0;
+      // let marginRight = 20;
+      // let marginBottom = 20;
+      // let marginLeft = 20;
+      let radiusScat = 3;
+      // let padding = 2;
+      // let xScalePopulation = d3.scaleLog()
+      //   .domain(d3.extent(Object.values(countriesData).map(d => +d["Population"])))
+      //   .range([marginLeft, width - marginRight]);
+
+      drawScat = () => {
+        let svg3 = d3.select("#scat_plot")
+          .attr("width", widthScat)
+          .attr("height", heightScat)
+          .attr("transform", `translate(0,${marginTop})`)
+          .attr("viewBox", [0, 600, widthScat, heightScat])
+          .attr("style", "max-width: 100%; height: auto;");
+
+          svg3.append("g")
+            .attr("transform", `translate(0,${heightScat - marginBottom})`)
+            .call(d3.axisBottom(xScalePopulation).tickSizeOuter(0));
+
+        //   // Append x-axis label
+        //   svg2.append("text")
+        //     .attr("transform", `translate(${widthPlot / 2},${heightPlot + 20})`) // Adjust the position as needed
+        //     .style("text-anchor", "middle")
+        //     .text("Population");
+
+        //   // Append title
+        //   svg2.append("text")
+        //     .attr("x", widthPlot / 2)
+        //     .attr("y", `${heightPlot + 50}`) // Adjust the position as needed
+        //     .style("font-size", "20px")
+        //     .style("font-weight", "bold")
+        //     .style("text-anchor", "middle")
+        //     .text("Population Distribution by Country");
+
+          svg3.append("g")
+            .selectAll("dot")
+            .data(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScalePopulation(d["Population"]), y: d => xScalePopulation(d["Population"]) })
+            .enter()
+            .append("circle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("r", radius)
+            .attr("fill", dotColor);
+      }
     }
 
   </script>
