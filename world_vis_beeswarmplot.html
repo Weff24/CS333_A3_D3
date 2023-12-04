@@ -1,0 +1,1161 @@
+<html>
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  #world_map {
+    border: solid 1px black;
+    flex: 1;
+  }
+
+  .states {
+    fill: #ccc;
+    stroke: #fff;
+  }
+
+  .symbol {
+    fill-opacity: .8;
+    stroke: #fff;
+  }
+
+  .symbol:hover {
+    fill: red;
+  }
+
+  div.tooltip {
+    display: grid;
+    align-content: center;
+    position: absolute;
+    text-align: center;
+    width: 200px;
+    height: 60px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    pointer-events: none;
+  }
+</style>
+
+<body>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+
+  <div id="vis_container">
+    <div>
+      <tr>
+        <td>
+          <input type="Button" value="Clear Selections" onclick="resetSelection()" />
+        </td>
+        <td>
+          <select id="xSelector" onchange="changeXSelection(event)">
+            <option value="Area (sq. km.)">Area (per sq km)</option>
+            <option value="Birthrate">Birthrate</option>
+            <option value="Deathrate">Deathrate</option>
+            <option value="GDP ($ per capita)" selected="selected">GDP per Capita</option>
+            <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
+            <option value="Literacy (%)">Literacy Rate</option>
+            <option value="Net migration">Net Migration</option>
+            <option value="Population">Population</option>
+            <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
+          </select>
+        </td>
+        <td>
+          <select id="ySelector" onChange="changeYSelection(event)">
+            <option value="Area (sq. km.)">Area (per sq km)</option>
+            <option value="Birthrate">Birthrate</option>
+            <option value="Deathrate">Deathrate</option>
+            <option value="GDP ($ per capita)">GDP per Capita</option>
+            <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
+            <option value="Literacy (%)">Literacy Rate</option>
+            <option value="Net migration">Net Migration</option>
+            <option value="Population" selected="selected">Population</option>
+            <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
+          </select>
+        </td>
+      </tr>
+      </di-v>
+      <div>
+        <tr>
+          <td>
+            <input id="xLog" type="Button" value="Log X Axis" onclick="logXAxis()" />
+          </td>
+          <td>
+            <input id="yLog" type="Button" value="Log Y Axis" onclick="logYAxis()" />
+          </td>
+        </tr>
+      </div>
+
+      <div class="container" style="display: flex; height: 100px;">
+        <div style="width: 50%;">
+          <svg id="scat_plot" width="700" height="400"></svg>
+          <svg id="world_map" width="450" height="300"></svg>
+        </div>
+        <div style="flex-grow: 1; position: relative;">
+          <svg id="population_plot" class="brush_container" width="800" height="600">
+            <rect id="population_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+              style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+            </rect>
+          </svg>
+          <svg id="gdp_plot" class="brush_container" width="800" height="600">
+            <rect id="gdp_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+              style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+            </rect>
+          </svg>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      // The svg
+      let svg = d3.select("#world_map");
+      let width = +svg.attr("width");
+      let height = +svg.attr("height");
+
+      // Map and projection
+      let path = d3.geoPath();
+      let projection = d3.geoMercator()
+        .scale(70)
+        .center([210, -30]);
+      // .translate([-width / 2, 0]);
+
+      // Data and color scale
+      let countriesData = {}
+      let data = d3.map();
+      let colorScale = d3.scaleThreshold()
+        .domain([100000, 1000000, 10000000, 30000000, 100000000, 500000000])
+        .range(d3.schemeBlues[7]);
+
+      // Colors 
+      let selectedColor = "#f25050";
+      let unselectedColor = "#ECECEC";
+      let hoverColor = "#2986CC";
+      let dotColor = "#B5B5B5";
+      let borderColor = "#3F3F3F";
+
+      // Selected data
+      let selectedCountries = [];
+
+      // basic tooltip
+      let tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+      // let countryCoordinatesAlt = d3.map();
+
+
+      // Load external data and boot
+      d3.queue()
+        .defer(d3.json, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
+        // .defer(d3.csv, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world_population.csv", function (d) { data.set(d.code, +d.pop); })
+        .defer(d3.csv, "countries of the world very very clean.csv", function (d) {
+          let countryNames = d["Country"].replace(/[$"]|\s+$/g, "").trim()
+          let countryAltNames = d["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim()
+
+          countriesData[countryAltNames] = d;
+        })
+        .await(ready);
+
+      let drawMap = null;
+      let drawScat = null;
+      let updateScat = null;
+      let drawPopulationPlot = null;
+      let colorPlot = null;
+      let brushPopulation = this.brush;
+      let isXLog = false;
+      let isYLog = false;
+
+      let resetSelection = () => {
+        selectedCountries = [];
+
+        d3.selectAll(".selection").style("display", "none");
+
+        colorPlot();
+        drawMap();
+        drawScat();
+        drawPopulationPlot();
+
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        d3.select("#population_plot rect").attr("width", 0);
+        d3.select("#population_plot rect").attr("height", 0);
+
+        // ====================== GDP PLOT STUFF BELOW ======================
+        d3.select("#gdp_plot rect").attr("width", 0);
+        d3.select("#gdp_plot rect").attr("height", 0);
+
+      }
+
+      let clearOtherSelections = (name_of_plot) => {
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        if(name_of_plot != "population_plot"){
+            d3.select("#population_plot rect").attr("width", 0);
+            d3.select("#population_plot rect").attr("height", 0);
+        }
+        // ====================== GDP PLOT STUFF BELOW ======================
+        if(name_of_plot != "gdp_plot"){
+            d3.select("#gdp_plot rect").attr("width", 0);
+            d3.select("#gdp_plot rect").attr("height", 0);
+        }
+      }
+
+      let logXAxis = () => {
+        isXLog = !isXLog;
+        if (isXLog) {
+          document.getElementById("xLog").value = "Linear X Axis";
+        } else {
+          document.getElementById("xLog").value = "Log X Axis";
+        }
+        updateScat();
+      }
+
+      let logYAxis = () => {
+        isYLog = !isYLog;
+        if (isYLog) {
+          document.getElementById("yLog").value = "Linear Y Axis";
+        } else {
+          document.getElementById("yLog").value = "Log Y Axis";
+        }
+        updateScat();
+      }
+
+      // User selected x and y varaibles for scatter plot
+      let xScatVar = document.getElementById("xSelector").value;
+      let yScatVar = document.getElementById("ySelector").value;
+
+      let changeXSelection = (event) => {
+        document.getElementById("xSelector").value = event.target.value;
+        xScatVar = event.target.value;
+        updateScat();
+      };
+      let changeYSelection = (event) => {
+        document.getElementById("ySelector").value = event.target.value;
+        yScatVar = event.target.value;
+        updateScat();
+      };
+
+      function ready(error, topojson) {
+
+        let mouseOver = function (d) {
+
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", .9)
+            .style("left", event.pageX + "px")
+            .style("top", (event.pageY + 10) + "px");
+          if (Object.keys(countriesData).includes(d.properties.name)) {
+            tooltip.html(d.properties.name
+              + "<br>Population: " + countriesData[d.properties.name]["Population"]
+              + "<br>GDP Per Capita: $" + countriesData[d.properties.name]["GDP ($ per capita)"]
+              + "<br>Literacy Rate: " + countriesData[d.properties.name]["Literacy (%)"].replace(",", ".") + "%");
+          } else {
+            tooltip.html(d.properties.name + "<br>No data available");
+          }
+
+
+          d3.selectAll(".Country")
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
+            })
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style("fill", hoverColor)
+        };
+
+        let mouseLeave = function (d) {
+
+          // Hide the tooltip 
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 0);
+
+          d3.selectAll(".Country")
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
+            })
+
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
+            })
+        };
+
+        let mouseClick = function (d) {
+          // Store the name of the selected country
+          if (selectedCountries.includes(d.properties.name)) {
+            // Remove the country from the list
+            selectedCountries = selectedCountries.filter(country => country !== d.properties.name);
+          } else {
+            // Add the country to the list
+            selectedCountries.push(d.properties.name);
+          }
+
+          // Reset the color of all countries
+          d3.selectAll(".Country")
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              return selectedCountries.includes(country.properties.name) ? selectedColor : unselectedColor;
+            })
+
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              return selectedCountries.includes(country.properties.name) ? selectedColor : hoverColor;
+            })
+
+          colorPlot();
+        };
+
+
+        // Draw the map
+        drawMap = () => {
+          svg.select('g').remove();
+
+          svg.append("g")
+            .selectAll("path")
+            .data(topojson.features)
+            .enter()
+            .append("path")
+            // draw each country
+            .attr("d", d3.geoPath()
+              .projection(projection)
+            )
+            // set the color of each country
+            .style("fill", unselectedColor)
+            .style("stroke", borderColor)
+            .attr("class", function (d) { return "Country" })
+            .on("mouseover", mouseOver)
+            .on("mouseleave", mouseLeave)
+            .on("click", mouseClick);
+
+          let zoom = d3.zoom()
+            .scaleExtent([1, 12])
+            .translateExtent([[0, 0], [width, height]])
+            .on('zoom', () => {
+              svg.selectAll('path').attr('transform', d3.event.transform);
+              svg.attr('stroke-width', 1 / d3.event.transform.k);
+            });
+          svg.transition().duration(1000).call(zoom.transform, d3.zoomIdentity);
+          svg.call(zoom);
+        }
+
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // Draw population plot function
+        let widthPlot = 450;
+        let heightPlot = 250;
+        let verticalOffset = 750;
+        let marginTop = 0;
+        let marginRight = 20;
+        let marginBottom = 20;
+        let marginLeft = 20;
+        let radius = 4;
+        let padding = 2;
+        let xScalePopulation = d3.scaleLog()
+          .domain(d3.extent(Object.values(countriesData).map(d => +d["Population"])))
+          .range([marginLeft, width - marginRight]);
+
+        drawPopulationPlot = () => {
+          let svg2 = d3.select("#population_plot")
+            .attr("width", widthPlot)
+            .attr("height", heightPlot)
+            .attr("transform", `translate(0,${marginTop})`)
+            .attr("viewBox", [0, 600, widthPlot, heightPlot])
+            .attr("style", "max-width: 100%; height: auto;");
+
+          svg2.append("g")
+            .attr("transform", `translate(0,${verticalOffset - marginBottom})`)
+            .call(d3.axisBottom(xScalePopulation).ticks(5, ",.0f").tickSize(10));
+
+          // Append x-axis label
+          svg2.append("text")
+            .attr("transform", `translate(${widthPlot / 2},${verticalOffset + 20})`) // Adjust the position as needed
+            .style("text-anchor", "middle")
+            .text("Population");
+
+          // Append title
+          svg2.append("text")
+            .attr("x", widthPlot / 2)
+            .attr("y", `${verticalOffset + 50}`) // Adjust the position as needed
+            .style("font-size", "20px")
+            .style("font-weight", "bold")
+            .style("text-anchor", "middle")
+            .text("Population Distribution by Country");
+
+          svg2.append("g")
+            .selectAll("dot")
+            .data(dodge(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScalePopulation(d["Population"]) }))
+            .enter()
+            .append("circle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => verticalOffset - marginBottom - radius - padding - d.y)
+            .attr("r", radius)
+            .attr("fill", dotColor);
+
+          // this stuff is what makes the population plot listen for dragging from the mouse
+          svg2.call(d3.drag()
+            .on("start", dragStart)
+            .on("drag", dragMove)
+            .on("end", dragEnd));
+
+          function dodge(data, { radius = 1, x }) {
+            const radius2 = radius ** 2;
+            const circles = data.map((d, i, data) => ({ x: +xScalePopulation(d["Population"]), data: d })).sort((a, b) => a.x - b.x);
+            // circles.forEach(circle => {
+            //   console.log(circle);
+            // });
+            const epsilon = 1e-3;
+            let head = null, tail = null;
+
+            // Returns true if circle ⟨x,y⟩ intersects with any circle in the queue.
+            function intersects(x, y) {
+              let a = head;
+              while (a) {
+                if (radius2 - epsilon > (a.x - x) ** 2 + (a.y - y) ** 2) {
+                  return true;
+                }
+                a = a.next;
+              }
+              return false;
+            }
+
+            // Place each circle sequentially.
+            for (const b of circles) {
+              // Remove circles from the queue that can’t intersect the new circle b.
+              while (head && head.x < b.x - radius2) head = head.next;
+
+              // Choose the minimum non-intersecting tangent.
+              if (intersects(b.x, b.y = 0)) {
+                let a = head;
+                b.y = Infinity;
+                do {
+                  let y = a.y + Math.sqrt(radius2 - (a.x - b.x) ** 2);
+                  if (y < b.y && !intersects(b.x, y)) b.y = y;
+                  a = a.next;
+                } while (a);
+              }
+
+              // Add b to the queue.
+              b.next = null;
+              if (head === null) head = tail = b;
+              else tail = tail.next = b;
+            }
+            return circles;
+          }
+        }
+
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // Draw gdp plot function
+        let gdp_widthPlot = 450;
+        let gdp_heightPlot = 250;
+        let gdp_verticalOffset = 750;
+        let gdp_marginTop = 0;
+        let gdp_marginRight = 20;
+        let gdp_marginBottom = 20;
+        let gdp_marginLeft = 20;
+        let gdp_radius = 4;
+        let gdp_padding = 2;
+        let xScaleGDP = d3.scaleLog()
+          .domain(d3.extent(Object.values(countriesData).map(d => +d["GDP ($ per capita)"])))
+          .range([gdp_marginLeft, width - gdp_marginRight]);
+
+        drawGDPPlot = () => {
+          let svg_gdp = d3.select("#gdp_plot")
+            .attr("width", gdp_widthPlot)
+            .attr("height", gdp_heightPlot)
+            .attr("transform", `translate(0,${gdp_marginTop})`)
+            .attr("viewBox", [0, 600, gdp_widthPlot, gdp_heightPlot])
+            .attr("style", "max-width: 100%; height: auto;");
+
+          svg_gdp.append("g")
+            .attr("transform", `translate(0,${gdp_verticalOffset - gdp_marginBottom})`)
+            .call(d3.axisBottom(xScaleGDP).ticks(5, ",.0f").tickSize(10));
+
+          // Append x-axis label
+          svg_gdp.append("text")
+            .attr("transform", `translate(${gdp_widthPlot / 2},${gdp_verticalOffset + 20})`) // Adjust the position as needed
+            .style("text-anchor", "middle")
+            .text("GDP");
+
+          // Append title
+          svg_gdp.append("text")
+            .attr("x", gdp_widthPlot / 2)
+            .attr("y", `${gdp_verticalOffset + 50}`) // Adjust the position as needed
+            .style("font-size", "20px")
+            .style("font-weight", "bold")
+            .style("text-anchor", "middle")
+            .text("GDP Distribution by Country");
+
+          svg_gdp.append("g")
+            .selectAll("dot")
+            .data(dodge(Object.values(countriesData), { gdp_radius: gdp_radius * 2 + gdp_padding, x: d => xScaleGDP(d["GDP ($ per capita)"]) }))
+            .enter()
+            .append("circle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => gdp_verticalOffset - gdp_marginBottom - gdp_radius - gdp_padding - d.y)
+            .attr("r", gdp_radius)
+            .attr("fill", dotColor);
+
+          svg_gdp.call(d3.drag()
+            .on("start", dragStart_gdp)
+            .on("drag", dragMove_gdp)
+            .on("end", dragEnd_gdp));
+
+          function dodge(data, { gdp_radius = 1, x }) {
+            const gdp_radius2 = gdp_radius ** 2;
+            const circles = data.map((d, i, data) => ({ x: +xScaleGDP(d["GDP ($ per capita)"]), data: d })).sort((a, b) => a.x - b.x);
+            // circles.forEach(circle => {
+            //   console.log(circle);
+            // });
+            const epsilon = 1e-3;
+            let head = null, tail = null;
+
+            // Returns true if circle ⟨x,y⟩ intersects with any circle in the queue.
+            function intersects(x, y) {
+              let a = head;
+              while (a) {
+                if (gdp_radius2 - epsilon > (a.x - x) ** 2 + (a.y - y) ** 2) {
+                  return true;
+                }
+                a = a.next;
+              }
+              return false;
+            }
+
+            // Place each circle sequentially.
+            for (const b of circles) {
+              // Remove circles from the queue that can’t intersect the new circle b.
+              while (head && head.x < b.x - gdp_radius2) head = head.next;
+
+              // Choose the minimum non-intersecting tangent.
+              if (intersects(b.x, b.y = 0)) {
+                let a = head;
+                b.y = Infinity;
+                do {
+                  let y = a.y + Math.sqrt(gdp_radius2 - (a.x - b.x) ** 2);
+                  if (y < b.y && !intersects(b.x, y)) b.y = y;
+                  a = a.next;
+                } while (a);
+              }
+
+              // Add b to the queue.
+              b.next = null;
+              if (head === null) head = tail = b;
+              else tail = tail.next = b;
+            }
+            return circles;
+          }
+        }
+
+        // ====================== GDP PLOT STUFF ABOVE ======================
+        // ====================== GDP PLOT STUFF ABOVE ======================
+        // ====================== GDP PLOT STUFF ABOVE ======================
+
+
+
+
+
+        // Draw scatter plot function
+        let widthScat = 700;
+        let heightScat = 400;
+        let yPadding = 50;
+        let xPadding = 100;
+        let rangeScale = 1.3;
+        let xAxis = null;
+        let yAxis = null;
+        let xLabel = "";
+        let yLabel = "";
+        let titleLabel = "";
+
+        drawScat = () => {
+          let svg3 = d3.select("#scat_plot")
+            .attr("width", widthScat)
+            .attr("height", heightScat)
+            .attr("transform", `translate(${marginLeft},${marginTop})`)
+            .attr("viewBox", [0, 0, widthScat, heightScat])
+            .attr("style", "max-width: 100%; height: auto;");
+
+          svg3.selectAll('g').remove();
+          svg3.selectAll('text').remove();
+
+
+          // Add X axis
+          let xMin = d3.min(Object.values(countriesData).map(country => +country[xScatVar]));
+          if (xMin > 0) {
+            xMin = 0;
+          }
+          // Linear or log X scale 
+          let xAxisScat = d3.scaleLinear()
+            .domain([rangeScale * xMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[xScatVar]))])
+            .range([0, widthScat]);
+          if (isXLog) {
+            xMin = 1e6;
+            xAxisScat = d3.scaleLog()
+              .domain([rangeScale * xMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[xScatVar]))])
+              .range([0, widthScat]);
+          }
+          xAxis = svg3.append("g")
+            .attr("transform", `translate(${xPadding},${heightScat - yPadding})`)
+            .call(d3.axisBottom(xAxisScat).ticks(10, ",.0f").tickSize(10));
+
+          // Add Y axis
+          let yMin = d3.min(Object.values(countriesData).map(country => +country[yScatVar]));
+          if (yMin > 0) {
+            yMin = 0;
+          }
+          // Linear or log Y scale 
+          let yAxisScat = d3.scaleLinear()
+            .domain([rangeScale * yMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[yScatVar]))])
+            .range([heightScat, yPadding]);
+          if (isYLog) {
+            yMin = 1e6;
+            yAxisScat = d3.scaleLog()
+              .domain([rangeScale * yMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[yScatVar]))])
+              .range([heightScat, yPadding]);
+          }
+          yAxis = svg3.append("g")
+            .attr("transform", `translate(${xPadding},${-yPadding})`)
+            .call(d3.axisLeft(yAxisScat).ticks(10, ",.0f").tickSize(10));
+
+          // Append x-axis label
+          xLabel = svg3.append("text")
+            .attr("transform", `translate(${widthScat / 2 + 50},${heightScat - 10})`) // Adjust the position as needed
+            .style("text-anchor", "middle")
+            .text(xScatVar);
+
+          // Append y-axis label
+          yLabel = svg3.append("text")
+            .attr("transform", `translate(12, ${heightScat / 2}) rotate(-90)`) // Adjust the position as needed
+            .style("text-anchor", "middle")
+            .text(yScatVar);
+
+          // Append title label
+          titleLabel = svg3.append("text")
+            .attr("x", widthScat / 2 + 50)
+            .attr("y", "16") // Adjust the position as needed
+            .style("font-size", "20px")
+            .style("font-weight", "bold")
+            .style("text-anchor", "middle")
+            .text(`${yScatVar} vs. ${xScatVar}`);
+
+          svg3.append("g")
+            .selectAll("dot")
+            .data(Object.values(countriesData).map((d, i, data) => ({ data: d, x: +xAxisScat(d[xScatVar]), y: +yAxisScat(d[yScatVar]) })))
+            .enter()
+            .append("circle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("r", 3)
+            .attr("fill", dotColor)
+            .attr('fill-opacity', 0.6)
+            .attr("transform", `translate(${xPadding},${-yPadding})`);
+        }
+
+        updateScat = () => {
+          let svg3 = d3.select("#scat_plot");
+
+          // Update X axis
+          let xMin = d3.min(Object.values(countriesData).map(country => +country[xScatVar]));
+          if (xMin > 0) {
+            xMin = 0;
+          }
+          // Linear or log X scale 
+          let xAxisScat = d3.scaleLinear()
+            .domain([rangeScale * xMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[xScatVar]))])
+            .range([0, widthScat]);
+          if (isXLog) {
+            xMin = 1e3;
+            xAxisScat = d3.scaleLog()
+              .domain([rangeScale * xMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[xScatVar]))])
+              .range([0, widthScat]);
+          }
+          xAxis.transition()
+            .duration(1500)
+            .attr("transform", `translate(${xPadding},${heightScat - yPadding})`)
+            .call(d3.axisBottom(xAxisScat).ticks(10, ",.0f").tickSize(10));
+
+          // Update Y axis
+          let yMin = d3.min(Object.values(countriesData).map(country => +country[yScatVar]));
+          if (yMin > 0) {
+            yMin = 0;
+          }
+          // Linear or log Y scale 
+          let yAxisScat = d3.scaleLinear()
+            .domain([rangeScale * yMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[yScatVar]))])
+            .range([heightScat, yPadding]);
+          if (isYLog) {
+            yMin = 1e3;
+            yAxisScat = d3.scaleLog()
+              .domain([rangeScale * yMin, rangeScale * d3.max(Object.values(countriesData).map(country => +country[yScatVar]))])
+              .range([heightScat, yPadding]);
+          }
+          yAxis.transition()
+            .duration(1500)
+            .attr("transform", `translate(${xPadding},${-yPadding})`)
+            .call(d3.axisLeft(yAxisScat).ticks(10, ",.0f").tickSize(10));
+
+          // Update x-axis label
+          xLabel.text(xScatVar);
+
+          // Update y-axis label
+          yLabel.text(yScatVar);
+
+          // Update title label
+          titleLabel.text(`${yScatVar} vs. ${xScatVar}`);
+
+          svg3.selectAll("circle")
+            .data(Object.values(countriesData).map((d, i, data) => ({ data: d, x: +xAxisScat(d[xScatVar]), y: +yAxisScat(d[yScatVar]) })))
+            .transition()
+            .duration(1500)
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("r", 3)
+            .attr("fill", dotColor)
+            .attr('fill-opacity', 0.6)
+            .attr("transform", `translate(${xPadding},${-yPadding})`);
+        }
+
+
+
+
+        // Draw map and plots
+        drawMap();
+        drawScat();
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        drawPopulationPlot();
+        // ====================== GDP PLOT STUFF BELOW ======================
+        drawGDPPlot();
+
+
+
+        // 
+        // Brushing and Linking
+        //
+
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+
+        // Declare rectElement outside the function
+        var rectElement;
+
+
+        var selectionRect = {
+          element: null,
+          originX: 0,
+          originY: 0,
+          currentX: 0,
+          currentY: 0,
+
+          setElement: function (ele) {
+            this.element = ele;
+          },
+
+          init: function (newX, newY, xAxisOnly) {
+            this.setElement(rectElement);
+            this.originX = newX;
+            this.originY = newY;
+            this.update(newX, newY, xAxisOnly);
+          },
+
+          update: function (newX, newY, xAxisOnly) {
+            this.currentX = newX;
+            this.currentY = newY;
+
+            var x = Math.min(this.currentX, this.originX);
+            var y = Math.min(this.currentY, this.originY);
+            var width = Math.abs(this.currentX - this.originX);
+            var height = Math.abs(this.currentY - this.originY);
+
+            // Set properties of the rectElement directly
+            rectElement.attr("x", x);
+            rectElement.attr("width", width);
+
+            if (xAxisOnly) {
+              // If only the X-axis is used, set a fixed height
+              rectElement.attr("y", 600); // currently hard-coded in
+              rectElement.attr("height", 130); // currently hard-coded in
+            } else {
+              // If both axes are used, update the width and height
+              rectElement.attr("y", y);
+              rectElement.attr("height", height);
+            }
+          },
+
+          remove: function () {
+            // No need to remove the rectElement since it's not created dynamically
+            this.element = null;
+          }
+        };
+
+        // Initialize a Map to store country names and their corresponding x-values
+        let countryXMap = new Map();
+
+        // Populate the countryXMap during the data loading phase
+        Object.values(countriesData).forEach(function (country) {
+          var countryName = country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
+          var xValue = xScalePopulation(country["Population"]);
+          countryXMap.set(countryName, xValue);
+        });
+
+
+        function dragStart() {
+          var p = d3.mouse(this);
+          selectionRect.init(p[0], p[1], true);
+          clearOtherSelections("population_plot")
+        }
+
+        function dragMove() {
+
+          var p = d3.mouse(this);
+
+          // Update the selection box
+          selectionRect.update(p[0], p[1], true);
+
+          // Get the x-range of the selection box
+          var xMin = Math.min(selectionRect.originX, selectionRect.currentX);
+          var xMax = Math.max(selectionRect.originX, selectionRect.currentX);
+
+          // Filter countries based on the x-range
+          var selectedCountriesInBox = Object.values(countriesData).filter(function (country) {
+            var x = xScalePopulation(country["Population"]);
+            return x >= xMin && x <= xMax;
+          });
+
+          // Update selectedCountries array
+          selectedCountries = selectedCountriesInBox.map(function (country) {
+            return country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
+          });
+
+          //console.log(selectedCountries);
+
+          // Update the color based on the selection
+          colorMap();
+          colorPlot();
+          // drawMap();
+        }
+
+        function dragEnd() {
+          console.log("dragEnd");
+        }
+
+
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+
+
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // ====================== GDP PLOT STUFF BELOW ======================
+
+
+        // Declare rectElement_gdp outside the function
+        var rectElement_gdp;
+
+
+        var selectionRect_gdp = {
+          element: null,
+          originX: 0,
+          originY: 0,
+          currentX: 0,
+          currentY: 0,
+
+          setElement: function (ele) {
+            this.element = ele;
+          },
+
+          init: function (newX, newY, xAxisOnly) {
+            this.setElement(rectElement_gdp);
+            this.originX = newX;
+            this.originY = newY;
+            this.update(newX, newY, xAxisOnly);
+          },
+
+          update: function (newX, newY, xAxisOnly) {
+            this.currentX = newX;
+            this.currentY = newY;
+
+            var x = Math.min(this.currentX, this.originX);
+            var y = Math.min(this.currentY, this.originY);
+            var width = Math.abs(this.currentX - this.originX);
+            var height = Math.abs(this.currentY - this.originY);
+
+            // Set properties of the rectElement_gdp directly
+            rectElement_gdp.attr("x", x);
+            rectElement_gdp.attr("width", width);
+
+            if (xAxisOnly) {
+              // If only the X-axis is used, set a fixed height
+              rectElement_gdp.attr("y", 600); // currently hard-coded in
+              rectElement_gdp.attr("height", 130); // currently hard-coded in
+            } else {
+              // If both axes are used, update the width and height
+              rectElement_gdp.attr("y", y);
+              rectElement_gdp.attr("height", height);
+            }
+          },
+
+          remove: function () {
+            // No need to remove the rectElement_gdp since it's not created dynamically
+            this.element = null;
+          }
+        };
+
+        function dragStart_gdp() {
+          var p = d3.mouse(this);
+          selectionRect_gdp.init(p[0], p[1], true);
+          clearOtherSelections("gdp_plot")
+        }
+
+        function dragMove_gdp() {
+
+          var p = d3.mouse(this);
+
+          // Update the selection box
+          selectionRect_gdp.update(p[0], p[1], true);
+
+          // Get the x-range of the selection box
+          var xMin = Math.min(selectionRect_gdp.originX, selectionRect_gdp.currentX);
+          var xMax = Math.max(selectionRect_gdp.originX, selectionRect_gdp.currentX);
+
+          // Initialize a Map to store country names and their corresponding x-values
+          let countryXMap = new Map();
+
+          // Populate the countryXMap during the data loading phase
+          Object.values(countriesData).forEach(function (country) {
+            var countryName = country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
+            var xValue = xScaleGDP(country["GDP ($ per capita)"]);
+            countryXMap.set(countryName, xValue);
+          });
+
+          // Filter countries based on the x-range
+          var selectedCountriesInBox_gdp = Object.values(countriesData).filter(function (country) {
+            var x = xScaleGDP(country["GDP ($ per capita)"]);
+            return x >= xMin && x <= xMax;
+          });
+
+          // Update selectedCountries array
+          selectedCountries = selectedCountriesInBox_gdp.map(function (country) {
+            return country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
+          });
+
+          //console.log(selectedCountries);
+
+          // Update the color based on the selection
+          colorMap();
+          colorPlot();
+          // drawMap();
+        }
+
+        function dragEnd_gdp() {
+          console.log("dragEnd_gdp");
+        }
+
+
+        // ====================== GDP PLOT STUFF ABOVE ======================
+        // ====================== GDP PLOT STUFF ABOVE ======================
+        // ====================== GDP PLOT STUFF ABOVE ======================
+
+
+
+
+
+        function handlePlotMousedown(d) {
+
+          let clickedCountryName = d3.select(this).data()[0]['data']['Country_cleaned_name'].replace(/[$"]|\s+$/g, "").trim();
+
+          if (selectedCountries.includes(clickedCountryName)) {
+            selectedCountries = selectedCountries.filter(country => country !== clickedCountryName);
+          } else {
+            selectedCountries.push(clickedCountryName);
+          }
+          colorMap();
+          colorPlot();
+        }
+
+        function handlePlotMouseover(d) {
+          // Show tooltip on mouseover
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", .9)
+            .style("left", event.pageX + "px")
+            .style("top", (event.pageY + 10) + "px");
+
+          tooltip.html(d['data']['Country_cleaned_name']
+            + "<br>Population: " + d['data']["Population"]);
+
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              return hoverColor;
+            })
+
+
+        }
+
+        function handlePlotMouseleave() {
+          // Hide tooltip on mouseleave
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 0);
+
+          d3.select(this)
+            .transition()
+            .duration(100)
+            .style("fill", function (country) {
+              // console.log((selectedCountries.includes(d3.select(this).data()[0]['data']['Country_cleaned_name'].replace(/[$"]|\s+$/g, "").trim())));
+              // console.log(selectedCountries)
+              // console.log(d3.select(this).data()[0]['data']['Country_cleaned_name'].replace(/[$"]|\s+$/g, "").trim())
+              // if selected countries includes the country just left, then change the color back to selectedColor, else dotColor
+              return (selectedCountries.includes(d3.select(this).data()[0]['data']['Country_cleaned_name'].replace(/[$"]|\s+$/g, "").trim())) ? selectedColor : dotColor;
+            })
+        }
+
+
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        // ====================== POPULATION PLOT STUFF BELOW ======================
+        function displayRect() {
+          // Select the rect element inside #selection_box
+          rectElement = d3.select("#population_plot rect#population_rect");
+
+          if (rectElement.empty()) {
+            console.error("No rect element found inside #population_plot");
+            return;
+          }
+
+          // Attach drag behavior to the existing rectElement
+          rectElement
+            .call(d3.drag().on("start", dragStart).on("drag", dragMove).on("end", dragEnd));
+
+          // Set the rectElement to be the target for selectionRect
+          selectionRect.setElement(rectElement);
+        }
+
+        // Call the displayRect function to initiate the rectangle
+        displayRect();
+
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+        // ====================== POPULATION PLOT STUFF ABOVE ======================
+
+
+
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // ====================== GDP PLOT STUFF BELOW ======================
+        // ====================== GDP PLOT STUFF BELOW ======================
+        function displayRect_gdp() {
+          // Select the rect element inside #selection_box
+          rectElement_gdp = d3.select("#gdp_plot rect#gdp_rect");
+
+          if (rectElement_gdp.empty()) {
+            console.error("No rect element found inside #gdp_plot");
+            return;
+          }
+
+          // Attach drag behavior to the existing rectElement_gdp
+          rectElement_gdp
+            .call(d3.drag().on("start", dragStart_gdp).on("drag", dragMove_gdp).on("end", dragEnd_gdp));
+
+          // Set the rectElement_gdp to be the target for selectionRect_gdp
+          selectionRect_gdp.setElement(rectElement_gdp);
+        }
+
+        // Call the displayRect function to initiate the rectangle
+        displayRect_gdp();
+
+        // ====================== GDP PLOT STUFF ABOVE ======================
+        // ====================== GDP PLOT STUFF ABOVE ======================
+        // ====================== GDP PLOT STUFF ABOVE ======================
+
+        // Code for displaying tooltips & making selections over circle points on any plot (might want to change how this works)
+        d3.selectAll("circle")
+          .on("mouseover", handlePlotMouseover)
+          .on("mousedown", handlePlotMousedown)
+          .on("mouseleave", handlePlotMouseleave);
+
+        let colorMap = () => {
+          d3.selectAll(".Country")
+            .transition()
+            .duration(25)
+            .style("fill", (d) => {
+              return selectedCountries.includes(d.properties.name) ? selectedColor : unselectedColor;
+            })
+        };
+
+        colorPlot = () => {
+          d3.selectAll("circle")
+            .transition()
+            .duration(25)
+            .style("fill", d => {
+              if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
+                return selectedColor;
+              } else {
+                return dotColor;
+              }
+            })
+            .style("stroke", d => {
+              if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
+                return borderColor;
+              } else {
+                return null;
+              }
+            })
+            .style("stroke-width", 1.5);
+        };
+
+
+        // let xAxisScatter = (g) => g
+        //   .attr("transform", `translate(0,${height - marginBottom})`)
+        //   .call(d3.axisBottom(xScalePopulation));
+
+        // let widthScat = 800;
+        // let heightScat = 750;
+        // let radiusScat = 3;
+
+        // drawScat = () => {
+        //   let svg3 = d3.select("#scat_plot")
+        //     .attr("width", widthScat)
+        //     .attr("height", heightScat)
+        //     .attr("transform", `translate(0,${marginTop})`)
+        //     .attr("viewBox", [0, 600, widthScat, heightScat])
+        //     .attr("style", "max-width: 100%; height: auto;");
+
+        //   svg3.append("g")
+        //     .attr("transform", `translate(0,${heightScat - marginBottom})`)
+        //     .call(d3.axisBottom(xScalePopulation).tickSizeOuter(0));
+
+        //   svg3.append("g")
+        //     .selectAll("dot")
+        //     .data(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScalePopulation(d["Population"]), y: d => xScalePopulation(d["Population"]) })
+        //     .enter()
+        //     .append("circle")
+        //     .attr("cx", d => d.x)
+        //     .attr("cy", d => d.y)
+        //     .attr("r", radius)
+        //     .attr("fill", dotColor);
+        // }
+      }
+
+    </script>
+
+</body>
+
+</html>

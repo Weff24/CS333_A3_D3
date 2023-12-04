@@ -15,7 +15,7 @@ Monaco ,7.412820873,43.74798225,Monaco,Monaco ,MC,Monaco,MC,WESTERN EUROPE      
 Czech Republic ,15.38327329,49.74917371,Czech Republic,Czech Republic ,CZ,Czech Republic,CZ,EASTERN EUROPE                     ,10235455,78866,129.8,0,0.97,3.93,15700,99.9,314.3,9.02,10.59
 Slovenia ,14.8906369,46.1375923,Slovenia,Slovenia ,SI,Slovenia,SI,EASTERN EUROPE                     ,2010347,20273,99.2,0.23,1.12,4.45,19000,99.7,406.1,8.98,10.31
 Ukraine ,31.27377208,48.65753252,Ukraine,Ukraine ,UA,Ukraine,UA,C.W. OF IND. STATES ,46710816,603700,77.4,0.46,-0.39,20.34,5400,99.7,259.9,8.82,14.39
-Guernsey ,-2.576392583,49.45870771,Guernsey,Guernsey,GG,United Kingdom,GB,WESTERN EUROPE                     ,65409,78,838.6,64.1,3.84,4.71,20000,,842.4,8.81,10.01
+Guernsey ,-2.576392583,49.45870771,Guernsey,Guernsey,GG,United Kingdom,GB,WESTERN EUROPE                     ,65409,78,838.6,64.1,3.84,4.71,20000,100.0,842.4,8.81,10.01
 Bosnia & Herzegovina ,17.83467241,44.14415356,Bosnia and Herzegovina,Bosnia and Herzegovina,BA,Bosnia and Herzegovina,BA,EASTERN EUROPE                     ,4498976,51129,88,0.04,0.31,21.05,6100,98.1,215.4,8.77,8.27
 Lithuania ,23.94602161,55.29437393,Lithuania,Lithuania ,LT,Lithuania,LT,BALTICS                            ,3585906,65200,55,0.14,-0.71,6.89,11400,99.6,223.4,8.75,10.98
 Austria ,13.79777836,47.63185827,Austria,Austria ,AT,Austria,AT,WESTERN EUROPE                     ,8192880,83870,97.7,0,2,4.66,30000,98,452.2,8.74,9.76
@@ -159,7 +159,7 @@ Brazil ,-54.35520661,-11.52463042,Brazil,Brazil ,BR,Brazil,BR,LATIN AMER. & CARI
 Samoa ,-172.4410766,-13.63425295,Samoa,Samoa ,WS,Samoa,WS,OCEANIA                            ,176908,2944,60.1,13.69,-11.7,27.71,5600,99.7,75.2,16.43,6.62
 Saint Vincent and the Grenadines ,-61.19376635,13.25480812,Saint Vincent and the Grenadines,Saint Vincent and the Grenadines ,VC,Saint Vincent and the Grenadines,VC,LATIN AMER. & CARIB    ,117848,389,303,21.59,-7.64,14.78,2900,96,190.9,16.18,5.98
 Seychelles ,55.4725079,-4.660002319,Seychelles,Seychelles ,SC,Seychelles,SC,SUB-SAHARAN AFRICA                 ,81541,455,179.2,107.91,-5.69,15.53,7800,58,262.4,16.03,6.29
-Greenland ,-42.07567788,74.16847219,Greenland,Greenland ,GL,Denmark,DK,NORTHERN AMERICA                   ,56361,2166086,0,2.04,-8.37,15.82,20000,100,448.9,15.93,7.84
+Greenland ,-42.07567788,74.16847219,Greenland,Greenland ,GL,Denmark,DK,NORTHERN AMERICA                   ,56361,2166086,1,2.04,-8.37,15.82,20000,100,448.9,15.93,7.84
 Moldova ,28.39111187,47.07256746,Moldova,Moldova ,MD,Moldova,MD,C.W. OF IND. STATES ,4466706,33843,132,0,-0.26,40.42,1800,99.1,208.1,15.7,12.64
 Qatar ,51.19794919,25.31852849,Qatar,Qatar ,QA,Qatar,QA,NEAR EAST                          ,885359,11437,77.4,4.92,16.29,18.61,21500,82.5,232,15.56,4.72
 "Korea, North ",127.3379806,40.19198091,North Korea,North Korea,KP,North Korea,KP,ASIA (EX. NEAR EAST)         ,23113019,120540,191.8,2.07,0,24.04,1300,99,42.4,15.54,7.13
@@ -201,11 +201,10 @@ Norway ,16.67025927,64.97775883,Norway,Norway ,NO,Norway,NO,WESTERN EUROPE      
 Bermuda ,-64.74585006,32.31506743,Bermuda,Bermuda ,BM,United Kingdom,GB,NORTHERN AMERICA                   ,65773,53,1241,194.34,2.49,8.53,36000,98,851.4,11.4,7.74
 Belarus ,27.96425205,53.46791375,Belarus,Belarus ,BY,Belarus,BY,C.W. OF IND. STATES ,10293011,207600,49.6,0,2.54,13.37,6100,99.6,319.1,11.16,14.02
 Denmark ,9.378670542,56.00118818,Denmark,Denmark ,DK,Denmark,DK,WESTERN EUROPE                     ,5450661,43094,126.5,16.97,2.48,4.56,31100,100,614.6,11.13,10.36
-Isle of Man ,-4.532995055,54.22855301,Isle of Man,Isle of Man,IM,United Kingdom,GB,WESTERN EUROPE                     ,75441,572,131.9,27.97,5.36,5.93,21000,,676,11.05,11.19
 Aruba ,-69.97564014,12.51562572,Aruba,Aruba ,AW,Aruba,AW,LATIN AMER. & CARIB    ,71891,193,372.5,35.49,0,5.89,28000,97,516.1,11.03,6.68
 Netherlands ,5.554136426,52.13405413,Netherlands,Netherlands ,NL,Netherlands,NL,WESTERN EUROPE                     ,16491461,41526,397.1,1.09,2.91,5.04,28600,99,460.8,10.9,8.68
 Canada ,-98.41680518,57.55048004,Canada,Canada ,CA,Canada,CA,NORTHERN AMERICA                   ,33098932,9984670,3.3,2.02,5.96,4.75,29800,97,552.2,10.78,7.8
-Gibraltar ,-5.345549485,36.14022671,Gibraltar,Gibraltar ,GI,United Kingdom,GB,WESTERN EUROPE                     ,27928,7,3989.7,171.43,0,5.13,17500,,877.7,10.74,9.31
+Gibraltar ,-5.345549485,36.14022671,Gibraltar,Gibraltar ,GI,United Kingdom,GB,WESTERN EUROPE                     ,27928,7,3989.7,171.43,0,5.13,17500,80.0,877.7,10.74,9.31
 Portugal ,-7.933662184,39.67529215,Portugal,Portugal ,PT,Portugal,PT,WESTERN EUROPE                     ,10605870,92391,114.8,1.94,3.57,5.05,18000,93.3,399.2,10.72,10.5
 United Kingdom ,-2.852943909,53.97844735,United Kingdom,England,GB,United Kingdom,GB,WESTERN EUROPE                     ,60609153,244820,247.6,5.08,2.19,5.16,27700,99,543.5,10.71,10.13
 Romania ,25.0941582,45.82454894,Romania,Romania ,RO,Romania,RO,EASTERN EUROPE                     ,22303552,237500,93.9,0.09,-0.13,26.43,7000,98.4,196.9,10.7,11.77
