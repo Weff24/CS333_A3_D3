@@ -80,17 +80,9 @@
     </div>
     <div style="position: relative;">
       <svg id="population_plot" class="brush_container" width="800" height="600">
-        <rect
-        rx="4"
-        ry="4"
-        x="0"
-        y="0"
-        width="0"
-        height="0"
-        class="selection-rect"
-        style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;"
-    > 
-  </rect>
+        <rect rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+          style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+        </rect>
       </svg>
       <!-- <svg id="selection_box" width="1000" height="1000" style="position: absolute; top: 0; left: 0;" >
         
@@ -99,7 +91,7 @@
     </div>
     <div>
       <svg id="scat_plot" width="800" height="350"></svg>
-      
+
     </div>
   </div>
 
@@ -303,7 +295,7 @@
       // Draw population plot function
       let widthPlot = 800;
       let heightPlot = 750;
-      
+
       let marginTop = 0;
       let marginRight = 20;
       let marginBottom = 20;
@@ -350,13 +342,13 @@
           .attr("cy", d => heightPlot - marginBottom - radius - padding - d.y)
           .attr("r", radius)
           .attr("fill", dotColor);
-        
-          // this stuff is what makes the population plot listen for dragging from the mouse
-          svg2.call(d3.drag()
-                .on("start", dragStart)
-                .on("drag", dragMove)
-                .on("end", dragEnd));
-                
+
+        // this stuff is what makes the population plot listen for dragging from the mouse
+        svg2.call(d3.drag()
+          .on("start", dragStart)
+          .on("drag", dragMove)
+          .on("end", dragEnd));
+
         function dodge(data, { radius = 1, x }) {
           const radius2 = radius ** 2;
           const circles = data.map((d, i, data) => ({ x: +xScalePopulation(d["Population"]), data: d })).sort((a, b) => a.x - b.x);
@@ -422,6 +414,8 @@
           .attr("transform", `translate(${marginLeft},${marginTop})`)
           .attr("viewBox", [0, 0, widthScat, heightScat])
           .attr("style", "max-width: 100%; height: auto;");
+
+        svg3.selectAll('g').remove();
 
         // svg3.append("g")
         //   .attr("transform", `translate(0,${heightScat - marginBottom})`)
@@ -532,107 +526,107 @@
       // Brushing and Linking
       //
 
-        // Declare rectElement outside the function
-        var rectElement;
+      // Declare rectElement outside the function
+      var rectElement;
 
-        var selectionRect = {
-            element: null,
-            originX: 0,
-            originY: 0,
+      var selectionRect = {
+        element: null,
+        originX: 0,
+        originY: 0,
 
-            setElement: function(ele) {
-                this.element = ele;
-            },
+        setElement: function (ele) {
+          this.element = ele;
+        },
 
-            init: function(newX, newY, xAxisOnly) {
-                this.setElement(rectElement);
-                this.originX = newX;
-                this.originY = newY;
-                this.update(newX, newY, xAxisOnly);
-            },
+        init: function (newX, newY, xAxisOnly) {
+          this.setElement(rectElement);
+          this.originX = newX;
+          this.originY = newY;
+          this.update(newX, newY, xAxisOnly);
+        },
 
-            update: function(newX, newY, xAxisOnly) {
-                this.currentX = newX;
-                this.currentY = newY;
+        update: function (newX, newY, xAxisOnly) {
+          this.currentX = newX;
+          this.currentY = newY;
 
-                var x = Math.min(this.currentX, this.originX);
-                var y = Math.min(this.currentY, this.originY);
-                var width = Math.abs(this.currentX - this.originX);
-                var height = Math.abs(this.currentY - this.originY);
+          var x = Math.min(this.currentX, this.originX);
+          var y = Math.min(this.currentY, this.originY);
+          var width = Math.abs(this.currentX - this.originX);
+          var height = Math.abs(this.currentY - this.originY);
 
-                // Set properties of the rectElement directly
-                rectElement.attr("x", x);
-                rectElement.attr("width", width);
+          // Set properties of the rectElement directly
+          rectElement.attr("x", x);
+          rectElement.attr("width", width);
 
-                if (xAxisOnly) {
-                    // If only the X-axis is used, set a fixed height
-                    rectElement.attr("y", 600); // currently hard-coded in
-                    rectElement.attr("height", 130); // currently hard-coded in
-                } else {
-                    // If both axes are used, update the width and height
-                    rectElement.attr("y", y);
-                    rectElement.attr("height", height);
-                }
-            },
+          if (xAxisOnly) {
+            // If only the X-axis is used, set a fixed height
+            rectElement.attr("y", 600); // currently hard-coded in
+            rectElement.attr("height", 130); // currently hard-coded in
+          } else {
+            // If both axes are used, update the width and height
+            rectElement.attr("y", y);
+            rectElement.attr("height", height);
+          }
+        },
 
-            remove: function() {
-                // No need to remove the rectElement since it's not created dynamically
-                this.element = null;
-            }
-        };
-
-        function dragStart() {
-            //console.log("dragStart");
-            var p = d3.mouse(this);
-            selectionRect.init(p[0], p[1], true);
+        remove: function () {
+          // No need to remove the rectElement since it's not created dynamically
+          this.element = null;
         }
-        
-        // Initialize a Map to store country names and their corresponding x-values
-        let countryXMap = new Map();
+      };
 
-        // Populate the countryXMap during the data loading phase
-        Object.values(countriesData).forEach(function (country) {
-          var countryName = country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
-          var xValue = xScalePopulation(country["Population"]);
-          countryXMap.set(countryName, xValue);
+      function dragStart() {
+        //console.log("dragStart");
+        var p = d3.mouse(this);
+        selectionRect.init(p[0], p[1], true);
+      }
+
+      // Initialize a Map to store country names and their corresponding x-values
+      let countryXMap = new Map();
+
+      // Populate the countryXMap during the data loading phase
+      Object.values(countriesData).forEach(function (country) {
+        var countryName = country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
+        var xValue = xScalePopulation(country["Population"]);
+        countryXMap.set(countryName, xValue);
+      });
+
+      function dragMove() {
+
+        var p = d3.mouse(this);
+
+        // Update the selection box
+        selectionRect.update(p[0], p[1], true);
+
+        // Get the x-range of the selection box
+        var xMin = Math.min(selectionRect.originX, selectionRect.currentX);
+        var xMax = Math.max(selectionRect.originX, selectionRect.currentX);
+
+        // Filter countries based on the x-range
+        var selectedCountriesInBox = Object.values(countriesData).filter(function (country) {
+          var x = xScalePopulation(country["Population"]);
+          return x >= xMin && x <= xMax;
         });
 
-        function dragMove() {
-          
-            var p = d3.mouse(this);
+        // Update selectedCountries array
+        selectedCountries = selectedCountriesInBox.map(function (country) {
+          return country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
+        });
 
-            // Update the selection box
-            selectionRect.update(p[0], p[1], true);
+        //console.log(selectedCountries);
 
-            // Get the x-range of the selection box
-            var xMin = Math.min(selectionRect.originX, selectionRect.currentX);
-            var xMax = Math.max(selectionRect.originX, selectionRect.currentX);
+        // Update the color based on the selection
+        colorMap();
+        colorPlot();
+        // drawMap();
+      }
 
-            // Filter countries based on the x-range
-            var selectedCountriesInBox = Object.values(countriesData).filter(function (country) {
-                var x = xScalePopulation(country["Population"]);
-                return x >= xMin && x <= xMax;
-            });
+      function dragEnd() {
+        console.log("dragEnd");
+      }
 
-            // Update selectedCountries array
-            selectedCountries = selectedCountriesInBox.map(function (country) {
-                return country["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim();
-            });
 
-            //console.log(selectedCountries);
-            
-            // Update the color based on the selection
-            colorMap();
-            colorPlot();
-            // drawMap();
-        }
-
-        function dragEnd() {
-            console.log("dragEnd");
-        }
-
-        
-        function handlePlotMouseover(d) {
+      function handlePlotMouseover(d) {
         // Show tooltip on mouseover
         tooltip.transition()
           .duration(200)
@@ -640,76 +634,76 @@
           .style("left", event.pageX + "px")
           .style("top", (event.pageY + 10) + "px");
 
-          tooltip.html(d['data']['Country_cleaned_name']
-            + "<br>Population: " + d['data']["Population"]);
+        tooltip.html(d['data']['Country_cleaned_name']
+          + "<br>Population: " + d['data']["Population"]);
 
-      // let xAxisScatter = (g) => g
-      //   .attr("transform", `translate(0,${height - marginBottom})`)
-      //   .call(d3.axisBottom(xScalePopulation));
-      // .selectAll("text.title")
-      // .data([1])
-      // .join("text")
-      // .attr("class", "title")
-      // .attr("font-family", "sans-serif")
-      // .attr("font-size", 10)
-      // .attr("y", -8)
-      // .attr("fill", "currentColor")
-      // .attr("x", chartWidth - 98)
-      // .text("Fertility Rate (children per woman)");
+        // let xAxisScatter = (g) => g
+        //   .attr("transform", `translate(0,${height - marginBottom})`)
+        //   .call(d3.axisBottom(xScalePopulation));
+        // .selectAll("text.title")
+        // .data([1])
+        // .join("text")
+        // .attr("class", "title")
+        // .attr("font-family", "sans-serif")
+        // .attr("font-size", 10)
+        // .attr("y", -8)
+        // .attr("fill", "currentColor")
+        // .attr("x", chartWidth - 98)
+        // .text("Fertility Rate (children per woman)");
 
-      // let makeScatPlot = (circlesContainer) => {
-      //   circlesContainer.selectAll(".brush_container")
-      //     .data([1])
-      //     .enter()
-      //     .append("g")
-      //     .attr("class", "brushContainer")
-      //     .call(brushPopulation);
-      // }
+        // let makeScatPlot = (circlesContainer) => {
+        //   circlesContainer.selectAll(".brush_container")
+        //     .data([1])
+        //     .enter()
+        //     .append("g")
+        //     .attr("class", "brushContainer")
+        //     .call(brushPopulation);
+        // }
 
-////       let makePopulationPlot = (circlesContainer) => {
-////         circlesContainer.selectAll(".brush_container")
-////           .data([1])
-////           .enter()
-//           .append("g")
-//           .attr("class", "brushContainer")
-//           .call(brushPopulation);
-//       }
-
-
-      // let makeLineChart = (linesContainer) => {
-      //   linesContainer.selectAll("path.line")
-      //     .data(linesDataByCountry)
-      //     .join("path")
-      //     .attr("class", "line")
-      //     .attr("d", lineGenerator)
-      //     .attr("stroke", d => {
-      //       if (d[0].country === selectedCountry) {
-      //         return "#3484c7";
-      //       } else if (brushedCountries.includes(d[0].country)) {
-      //         return "#573B9F";
-      //       } else {
-      //         return "lightgrey"
-      //       }
-      //     })
-      //     .attr("stroke-width", 2)
-      //     .attr("opacity", 0.8)
-      //     .attr("fill", "none");
-
-      // const chartsContainer = d3.select("#vis_container");
-      // d3.select("#scat_plot")
-      //   .call(makeScatPlot);
-
-      //// d3.select("#population_plot")
-      ////  .call(makePopulationPlot);
+        ////       let makePopulationPlot = (circlesContainer) => {
+        ////         circlesContainer.selectAll(".brush_container")
+        ////           .data([1])
+        ////           .enter()
+        //           .append("g")
+        //           .attr("class", "brushContainer")
+        //           .call(brushPopulation);
+        //       }
 
 
+        // let makeLineChart = (linesContainer) => {
+        //   linesContainer.selectAll("path.line")
+        //     .data(linesDataByCountry)
+        //     .join("path")
+        //     .attr("class", "line")
+        //     .attr("d", lineGenerator)
+        //     .attr("stroke", d => {
+        //       if (d[0].country === selectedCountry) {
+        //         return "#3484c7";
+        //       } else if (brushedCountries.includes(d[0].country)) {
+        //         return "#573B9F";
+        //       } else {
+        //         return "lightgrey"
+        //       }
+        //     })
+        //     .attr("stroke-width", 2)
+        //     .attr("opacity", 0.8)
+        //     .attr("fill", "none");
 
-      // chartsContainer.select("#world_map")
-      //   .call(makeWorldMap);
+        // const chartsContainer = d3.select("#vis_container");
+        // d3.select("#scat_plot")
+        //   .call(makeScatPlot);
+
+        //// d3.select("#population_plot")
+        ////  .call(makePopulationPlot);
 
 
-            
-          d3.select(this)
+
+        // chartsContainer.select("#world_map")
+        //   .call(makeWorldMap);
+
+
+
+        d3.select(this)
           .transition()
           .duration(100)
           .style("fill", function (country) {
@@ -717,13 +711,13 @@
           })
 
 
-        }
+      }
 
-        function handlePlotMouseleave() {
+      function handlePlotMouseleave() {
         // Hide tooltip on mouseleave
         tooltip.transition()
-            .duration(200)
-            .style("opacity", 0);
+          .duration(200)
+          .style("opacity", 0);
 
         d3.select(this)
           .transition()
@@ -735,96 +729,93 @@
             // if selected countries includes the country just left, then change the color back to selectedColor, else dotColor
             return (selectedCountries.includes(d3.select(this).data()[0]['data']['Country_cleaned_name'].replace(/[$"]|\s+$/g, "").trim())) ? selectedColor : dotColor;
           })
+      }
+
+      function displayRect() {
+        // Select the rect element inside #selection_box
+        rectElement = d3.select("#population_plot rect");
+
+        if (rectElement.empty()) {
+          console.error("No rect element found inside #population_plot");
+          return;
         }
 
-        function displayRect() {
-            // Select the rect element inside #selection_box
-            rectElement = d3.select("#population_plot rect");
+        // Attach drag behavior to the existing rectElement
+        rectElement
+          .call(d3.drag().on("start", dragStart).on("drag", dragMove).on("end", dragEnd));
 
-            if (rectElement.empty()) {
-                console.error("No rect element found inside #population_plot");
-                return;
-            }
+        // Set the rectElement to be the target for selectionRect
+        selectionRect.setElement(rectElement);
+      }
 
-            // Attach drag behavior to the existing rectElement
-            rectElement
-                .call(d3.drag().on("start", dragStart).on("drag", dragMove).on("end", dragEnd));
+      // Call the displayRect function to initiate the rectangle
+      displayRect();
 
-            // Set the rectElement to be the target for selectionRect
-            selectionRect.setElement(rectElement);
-        }
+      d3.selectAll("circle")
+        .on("mouseover", handlePlotMouseover)
+        .on("mouseleave", handlePlotMouseleave);
 
-        // Call the displayRect function to initiate the rectangle
-        displayRect();
+      let colorMap = () => {
+        d3.selectAll(".Country")
+          .transition()
+          .duration(25)
+          .style("fill", (d) => {
+            return selectedCountries.includes(d.properties.name) ? selectedColor : unselectedColor;
+          })
+      };
 
+      colorPlot = () => {
         d3.selectAll("circle")
-            .on("mouseover", handlePlotMouseover)
-            .on("mouseleave", handlePlotMouseleave);
-
-        let colorMap = () => {
-            d3.selectAll(".Country")
-            .transition()
-            .duration(25)
-            .style("fill", (d) => {
-                return selectedCountries.includes(d.properties.name) ? selectedColor : unselectedColor;
-            })
-        };
-
-        colorPlot = () => {
-            d3.selectAll("circle")
-            .transition()
-            .duration(25)
-            .style("fill", d => {
-                if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
-                return selectedColor;
-                } else {
-                return dotColor;
-                }
-            })
-            .style("stroke", d => {
-                if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
-                return borderColor;
-                } else {
-                return null;
-                }
-            })
-            .style("stroke-width", 1.5);
-        };
+          .transition()
+          .duration(25)
+          .style("fill", d => {
+            if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
+              return selectedColor;
+            } else {
+              return dotColor;
+            }
+          })
+          .style("stroke", d => {
+            if (selectedCountries.includes(d.data["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim())) {
+              return borderColor;
+            } else {
+              return null;
+            }
+          })
+          .style("stroke-width", 1.5);
+      };
 
 
-        let xAxisScatter = (g) => g
-            .attr("transform", `translate(0,${height - marginBottom})`)
-            .call(d3.axisBottom(xScalePopulation));
+      // let xAxisScatter = (g) => g
+      //   .attr("transform", `translate(0,${height - marginBottom})`)
+      //   .call(d3.axisBottom(xScalePopulation));
 
-        let widthScat = 800;
-        let heightScat = 750;
-        let radiusScat = 3;
-        
-        drawScat = () => {
-            let svg3 = d3.select("#scat_plot")
-            .attr("width", widthScat)
-            .attr("height", heightScat)
-            .attr("transform", `translate(0,${marginTop})`)
-            .attr("viewBox", [0, 600, widthScat, heightScat])
-            .attr("style", "max-width: 100%; height: auto;");
+      // let widthScat = 800;
+      // let heightScat = 750;
+      // let radiusScat = 3;
 
-            svg3.append("g")
-                .attr("transform", `translate(0,${heightScat - marginBottom})`)
-                .call(d3.axisBottom(xScalePopulation).tickSizeOuter(0));
-                
+      // drawScat = () => {
+      //   let svg3 = d3.select("#scat_plot")
+      //     .attr("width", widthScat)
+      //     .attr("height", heightScat)
+      //     .attr("transform", `translate(0,${marginTop})`)
+      //     .attr("viewBox", [0, 600, widthScat, heightScat])
+      //     .attr("style", "max-width: 100%; height: auto;");
 
-            svg3.append("g")
-                .selectAll("dot")
-                .data(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScalePopulation(d["Population"]), y: d => xScalePopulation(d["Population"]) })
-                .enter()
-                .append("circle")
-                .attr("cx", d => d.x)
-                .attr("cy", d => d.y)
-                .attr("r", radius)
-                .attr("fill", dotColor);
-        }
+      //   svg3.append("g")
+      //     .attr("transform", `translate(0,${heightScat - marginBottom})`)
+      //     .call(d3.axisBottom(xScalePopulation).tickSizeOuter(0));
 
-      
+      //   svg3.append("g")
+      //     .selectAll("dot")
+      //     .data(Object.values(countriesData), { radius: radius * 2 + padding, x: d => xScalePopulation(d["Population"]), y: d => xScalePopulation(d["Population"]) })
+      //     .enter()
+      //     .append("circle")
+      //     .attr("cx", d => d.x)
+      //     .attr("cy", d => d.y)
+      //     .attr("r", radius)
+      //     .attr("fill", dotColor);
+      // }
     }
 
   </script>
