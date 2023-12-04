@@ -46,6 +46,32 @@
         <td>
           <input type="Button" value="Clear Selections" onclick="resetSelection()" />
         </td>
+        <td>
+          <select id="xSelector" onchange="changeXSelection(event)">
+            <option value="Area (sq. km.)">Area (per sq km)</option>
+            <option value="Birthrate">Birthrate</option>
+            <option value="Deathrate">Deathrate</option>
+            <option value="GDP ($ per capita)" selected="selected">GDP per Capita</option>
+            <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
+            <option value="Literacy (%)">Literacy Rate</option>
+            <option value="Net migration">Net Migration</option>
+            <option value="Population">Population</option>
+            <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
+          </select>
+        </td>
+        <td>
+          <select id="ySelector" onChange="changeYSelection(event)">
+            <option value="Area (sq. km.)">Area (per sq km)</option>
+            <option value="Birthrate">Birthrate</option>
+            <option value="Deathrate">Deathrate</option>
+            <option value="GDP ($ per capita)">GDP per Capita</option>
+            <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
+            <option value="Literacy (%)">Literacy Rate</option>
+            <option value="Net migration">Net Migration</option>
+            <option value="Population" selected="selected">Population</option>
+            <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
+          </select>
+        </td>
       </tr>
     </div>
 
@@ -69,6 +95,7 @@
       <!-- <svg id="selection_box" width="1000" height="1000" style="position: absolute; top: 0; left: 0;" >
         
     </svg> -->
+
     </div>
     <div>
       <svg id="scat_plot" width="800" height="350"></svg>
@@ -127,6 +154,8 @@
       .await(ready);
 
     let drawMap = null;
+    let drawScat = null;
+    let updateScat = null;
     let drawPopulationPlot = null;
     let colorPlot = null;
     let brushPopulation = this.brush;
@@ -138,8 +167,24 @@
 
       colorPlot();
       drawMap();
+      drawScat();
       drawPopulationPlot();
     }
+
+    // User selected x and y varaibles for scatter plot
+    let xScatVar = document.getElementById("xSelector").value;
+    let yScatVar = document.getElementById("ySelector").value;
+
+    let changeXSelection = (event) => {
+      document.getElementById("xSelector").value = event.target.value;
+      xScatVar = event.target.value;
+      updateScat();
+    };
+    let changeYSelection = (event) => {
+      document.getElementById("ySelector").value = event.target.value;
+      yScatVar = event.target.value;
+      updateScat();
+    };
 
     function ready(error, topojson) {
 
@@ -358,9 +403,129 @@
         }
       }
 
+
+      // Draw scatter plot function
+      let widthScat = 800;
+      let heightScat = 750;
+      let xAxis = null;
+      let yAxis = null;
+      // let radiusScat = 3;
+      // let padding = 2;
+      // let xScalePopulation = d3.scaleLog()
+      //   .domain(d3.extent(Object.values(countriesData).map(d => +d["Population"])))
+      //   .range([marginLeft, width - marginRight]);
+
+      drawScat = () => {
+        let svg3 = d3.select("#scat_plot")
+          .attr("width", widthScat)
+          .attr("height", heightScat)
+          .attr("transform", `translate(${marginLeft},${marginTop})`)
+          .attr("viewBox", [0, 0, widthScat, heightScat])
+          .attr("style", "max-width: 100%; height: auto;");
+
+        // svg3.append("g")
+        //   .attr("transform", `translate(0,${heightScat - marginBottom})`)
+        //   .call(d3.axisBottom(xScalePopulation).tickSizeOuter(0));
+
+        // Add X axis
+        let xMin = d3.min(Object.values(countriesData).map(country => +country[xScatVar]));
+        if (xMin > 0) {
+          xMin = 0;
+        }
+        let xAxisScat = d3.scaleLinear()
+          .domain([1.1 * xMin, 1.1 * d3.max(Object.values(countriesData).map(country => +country[xScatVar]))])
+          .range([0, widthScat]);
+        xAxis = svg3.append("g")
+          .attr("transform", `translate(100,${heightScat - 30})`)
+          .call(d3.axisBottom(xAxisScat).ticks(10, ",.0f").tickSize(10));
+
+        // Add Y axis
+        let yMin = d3.min(Object.values(countriesData).map(country => +country[yScatVar]));
+        if (yMin > 0) {
+          yMin = 0;
+        }
+        let yAxisScat = d3.scaleLinear()
+          .domain([1.1 * yMin, 1.1 * d3.max(Object.values(countriesData).map(country => +country[yScatVar]))])
+          .range([heightScat, 0]);
+        yAxis = svg3.append("g")
+          .attr("transform", "translate(100, -30)")
+          .call(d3.axisLeft(yAxisScat).ticks(10, ",.0f").tickSize(10));
+
+        // Append x-axis label
+        svg3.append("text")
+          .attr("transform", `translate(${widthPlot / 2},${heightPlot + 20})`) // Adjust the position as needed
+          .style("text-anchor", "middle")
+          .text("Population");
+
+        // Append title
+        svg3.append("text")
+          .attr("x", widthPlot / 2)
+          .attr("y", `${heightPlot + 50}`) // Adjust the position as needed
+          .style("font-size", "20px")
+          .style("font-weight", "bold")
+          .style("text-anchor", "middle")
+          .text("Population Distribution by Country");
+
+        svg3.append("g")
+          .selectAll("dot")
+          .data(Object.values(countriesData).map((d, i, data) => ({ data: d, x: +xAxisScat(d[xScatVar]), y: +yAxisScat(d[yScatVar]) })))
+          .enter()
+          .append("circle")
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y)
+          .attr("r", 3)
+          .attr("fill", dotColor)
+          .attr("transform", `translate(100, -30)`);
+      }
+
+      updateScat = () => {
+        let svg3 = d3.select("#scat_plot");
+
+        // Add X axis
+        let xMin = d3.min(Object.values(countriesData).map(country => +country[xScatVar]));
+        if (xMin > 0) {
+          xMin = 0;
+        }
+        let xAxisScat = d3.scaleLinear()
+          .domain([1.1 * xMin, 1.1 * d3.max(Object.values(countriesData).map(country => +country[xScatVar]))])
+          .range([0, widthScat]);
+        xAxis.transition()
+          .duration(1500)
+          .attr("transform", `translate(100,${heightScat - 30})`)
+          .call(d3.axisBottom(xAxisScat).ticks(10, ",.0f").tickSize(10));
+
+        // Add Y axis
+        let yMin = d3.min(Object.values(countriesData).map(country => +country[yScatVar]));
+        if (yMin > 0) {
+          yMin = 0;
+        }
+        let yAxisScat = d3.scaleLinear()
+          .domain([1.1 * yMin, 1.1 * d3.max(Object.values(countriesData).map(country => +country[yScatVar]))])
+          .range([heightScat, 0]);
+        yAxis.transition()
+          .duration(1500)
+          .attr("transform", "translate(100, -30)")
+          .call(d3.axisLeft(yAxisScat).ticks(10, ",.0f").tickSize(10));
+
+        svg3.selectAll("circle")
+          .data(Object.values(countriesData).map((d, i, data) => ({ data: d, x: +xAxisScat(d[xScatVar]), y: +yAxisScat(d[yScatVar]) })))
+          .transition()
+          .duration(1500)
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y)
+          .attr("r", 3)
+          .attr("fill", dotColor)
+          .attr("transform", `translate(100, -30)`);
+      }
+
+
+
+
       // Draw map and plots
       drawMap();
+      drawScat();
       drawPopulationPlot();
+
 
 
       // 
@@ -478,6 +643,71 @@
           tooltip.html(d['data']['Country_cleaned_name']
             + "<br>Population: " + d['data']["Population"]);
 
+      // let xAxisScatter = (g) => g
+      //   .attr("transform", `translate(0,${height - marginBottom})`)
+      //   .call(d3.axisBottom(xScalePopulation));
+      // .selectAll("text.title")
+      // .data([1])
+      // .join("text")
+      // .attr("class", "title")
+      // .attr("font-family", "sans-serif")
+      // .attr("font-size", 10)
+      // .attr("y", -8)
+      // .attr("fill", "currentColor")
+      // .attr("x", chartWidth - 98)
+      // .text("Fertility Rate (children per woman)");
+
+      // let makeScatPlot = (circlesContainer) => {
+      //   circlesContainer.selectAll(".brush_container")
+      //     .data([1])
+      //     .enter()
+      //     .append("g")
+      //     .attr("class", "brushContainer")
+      //     .call(brushPopulation);
+      // }
+
+////       let makePopulationPlot = (circlesContainer) => {
+////         circlesContainer.selectAll(".brush_container")
+////           .data([1])
+////           .enter()
+//           .append("g")
+//           .attr("class", "brushContainer")
+//           .call(brushPopulation);
+//       }
+
+
+      // let makeLineChart = (linesContainer) => {
+      //   linesContainer.selectAll("path.line")
+      //     .data(linesDataByCountry)
+      //     .join("path")
+      //     .attr("class", "line")
+      //     .attr("d", lineGenerator)
+      //     .attr("stroke", d => {
+      //       if (d[0].country === selectedCountry) {
+      //         return "#3484c7";
+      //       } else if (brushedCountries.includes(d[0].country)) {
+      //         return "#573B9F";
+      //       } else {
+      //         return "lightgrey"
+      //       }
+      //     })
+      //     .attr("stroke-width", 2)
+      //     .attr("opacity", 0.8)
+      //     .attr("fill", "none");
+
+      // const chartsContainer = d3.select("#vis_container");
+      // d3.select("#scat_plot")
+      //   .call(makeScatPlot);
+
+      //// d3.select("#population_plot")
+      ////  .call(makePopulationPlot);
+
+
+
+      // chartsContainer.select("#world_map")
+      //   .call(makeWorldMap);
+
+
             
           d3.select(this)
           .transition()
@@ -505,7 +735,6 @@
             // if selected countries includes the country just left, then change the color back to selectedColor, else dotColor
             return (selectedCountries.includes(d3.select(this).data()[0]['data']['Country_cleaned_name'].replace(/[$"]|\s+$/g, "").trim())) ? selectedColor : dotColor;
           })
-
         }
 
         function displayRect() {
@@ -595,7 +824,7 @@
                 .attr("fill", dotColor);
         }
 
-        
+      
     }
 
   </script>
