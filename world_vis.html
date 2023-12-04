@@ -470,8 +470,8 @@
         let marginRight = 20;
         let marginBottom = 10;
         let marginLeft = 20;
-        let radius = 3.2;
-        let padding = 2;
+        let radius = 3.5;
+        let padding = 0.1;
         let xScalePopulation = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Population"])))
           .range([marginLeft, width - marginRight]);
@@ -580,8 +580,8 @@
         let gdp_marginRight = 20;
         let gdp_marginBottom = 10;
         let gdp_marginLeft = 20;
-        let gdp_radius = 3.2;
-        let gdp_padding = 2;
+        let gdp_radius = 3.5;
+        let gdp_padding = 0.1;
         let xScaleGDP = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["GDP ($ per capita)"])))
           .range([gdp_marginLeft, width - gdp_marginRight]);
@@ -686,8 +686,8 @@
         let area_marginRight = 20;
         let area_marginBottom = 10;
         let area_marginLeft = 20;
-        let area_radius = 3;
-        let area_padding = 2;
+        let area_radius = 3.5;
+        let area_padding = 0.1;
         let xScaleArea = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Area (sq. km.)"])))
           .range([area_marginLeft, width - area_marginRight]);
@@ -792,8 +792,8 @@
         let birth_marginRight = 20;
         let birth_marginBottom = 10;
         let birth_marginLeft = 20;
-        let birth_radius = 3.2;
-        let birth_padding = 2;
+        let birth_radius = 3.5;
+        let birth_padding = 0.1;
         let xScaleBirth = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Birthrate"])))
           .range([birth_marginLeft, width - birth_marginRight]);
@@ -897,8 +897,8 @@
         let death_marginRight = 20;
         let death_marginBottom = 10;
         let death_marginLeft = 20;
-        let death_radius = 3.2;
-        let death_padding = 2;
+        let death_radius = 3.5;
+        let death_padding = 0.1;
         let xScaleDeath = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Deathrate"])))
           .range([death_marginLeft, width - death_marginRight]);
@@ -1002,7 +1002,7 @@
         let literacy_marginRight = 20;
         let literacy_marginBottom = 10;
         let literacy_marginLeft = 20;
-        let literacy_radius = 2.3;
+        let literacy_radius = 2;
         let literacy_padding = 0.1;
         
         let xScaleLiteracy = d3.scaleLinear()
@@ -1110,8 +1110,8 @@
         let popdensity_marginRight = 20;
         let popdensity_marginBottom = 10;
         let popdensity_marginLeft = 20;
-        let popdensity_radius = 2.6;
-        let popdensity_padding = 2;
+        let popdensity_radius = 3.5;
+        let popdensity_padding = 0.1;
         let xScalePopdensity = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Pop. Density (per sq. km.)"])))
           .range([popdensity_marginLeft, width - popdensity_marginRight]);
@@ -1216,8 +1216,8 @@
         let infantmortality_marginRight = 20;
         let infantmortality_marginBottom = 10;
         let infantmortality_marginLeft = 20;
-        let infantmortality_radius = 3.2;
-        let infantmortality_padding = 2;
+        let infantmortality_radius = 3.5;
+        let infantmortality_padding = 0.1;
         let xScaleInfantmortality = d3.scaleLog()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Infant mortality (per 1000 births)"])))
           .range([infantmortality_marginLeft, width - infantmortality_marginRight]);
