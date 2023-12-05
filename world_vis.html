@@ -52,10 +52,10 @@
 
 
     <div class="brush_container" style="display: grid; grid-template-columns: 3fr 2fr 2fr; width: 100%;">
-      <div style="width: 50%;">
+      <div style="width: 95%;">
         <div style="display: grid; grid-template-columns: 1fr 2fr 2fr; width: 500px;">
           <div>
-            <input id="clear_selections" type="Button" value="Clear Selections" onclick="resetSelection()"
+            <input id="clear_selections" type="Button" value="Clear Selection" onclick="resetSelection()"
               style="height: 100%; border-radius: 10px;" />
           </div>
           <div>
@@ -105,14 +105,17 @@
             </div>
           </div>
         </div>
-        <svg id="scat_plot" width="600" height="350">
-          <rect id="scat_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
-            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
-          </rect>
-        </svg>
-        <div style="margin-left: 42%">
-          <h4 style="margin: 0px 55%; width: 100%; text-align: center;">World Map</h4>
-          <svg id="world_map" width="360" height="240"></svg>
+        <div style="width: 100%; border-right: 2px solid black">
+          <svg id="scat_plot" width="600" height="350">
+            <rect id="scat_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+              style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+            </rect>
+          </svg>
+        </div>
+        <div style="width: 100%; border-right: 2px solid black">
+          <h4 style="margin: 0; padding-top: 3px; width: 100%; text-align: center; border-top: 2px solid black">World
+            Map</h4>
+          <svg id="world_map" width="360" height="240" style="margin-left: 21%"></svg>
         </div>
       </div>
       <div style="position: relative; margin-right: 10%">
