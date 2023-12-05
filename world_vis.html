@@ -21,6 +21,12 @@
     fill: red;
   }
 
+  #clear_selections:hover,
+  #xLog:hover,
+  #yLog:hover {
+    background-color: #FAFAFA;
+  }
+
   div.tooltip {
     display: grid;
     align-content: center;
@@ -41,53 +47,64 @@
   <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 
   <div id="vis_container">
-    <div>
-      <tr>
-        <td>
-          <input type="Button" value="Clear Selections" onclick="resetSelection()" />
-        </td>
-        <td>
-          <select id="xSelector" onchange="changeXSelection(event)">
-            <option value="Area (sq. km.)">Area (per sq km)</option>
-            <option value="Birthrate">Birthrate</option>
-            <option value="Deathrate">Deathrate</option>
-            <option value="GDP ($ per capita)" selected="selected">GDP per Capita</option>
-            <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
-            <option value="Literacy (%)">Literacy Rate</option>
-            <!-- <option value="Net migration">Net Migration</option> -->
-            <option value="Population">Population</option>
-            <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
-          </select>
-        </td>
-        <td>
-          <select id="ySelector" onChange="changeYSelection(event)">
-            <option value="Area (sq. km.)">Area (per sq km)</option>
-            <option value="Birthrate">Birthrate</option>
-            <option value="Deathrate">Deathrate</option>
-            <option value="GDP ($ per capita)">GDP per Capita</option>
-            <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
-            <option value="Literacy (%)">Literacy Rate</option>
-            <!-- <option value="Net migration">Net Migration</option> -->
-            <option value="Population" selected="selected">Population</option>
-            <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
-          </select>
-        </td>
-      </tr>
-    </div>
-    <div style="display: flex; justify-content: space-around; width: 430px; margin-left: 116px;">
-      <tr>
-        <td>
-          <input id="xLog" type="Button" value="Switch to Log X Axis" onclick="logXAxis()" style="width: 210px" />
-        </td>
-        <td>
-          <input id="yLog" type="Button" value="Switch to Log Y Axis" onclick="logYAxis()" style="width: 210px" />
-        </td>
-      </tr>
-    </div>
+    <h3 style="width: 100vw; text-align: center; margin: 0; text-decoration: underline;">Countries of the World
+      Interactive Visualization</h3>
+
 
     <div class="brush_container" style="display: grid; grid-template-columns: 3fr 2fr 2fr; width: 100%;">
       <div style="width: 50%;">
-
+        <div style="display: grid; grid-template-columns: 1fr 2fr 2fr; width: 500px;">
+          <div>
+            <input id="clear_selections" type="Button" value="Clear Selections" onclick="resetSelection()"
+              style="height: 100%; border-radius: 10px;" />
+          </div>
+          <div>
+            <div style="display: flex; flex-direction: row; margin-bottom: 2px;">
+              <tr>
+                <td>
+                  <label style="width: 55px; margin: 0 10px;">X-Axis:</label>
+                  <select id="xSelector" onchange="changeXSelection(event)" style="margin-right: 10px;">
+                    <option value="Area (sq. km.)">Area (per sq km)</option>
+                    <option value="Birthrate">Birthrate</option>
+                    <option value="Deathrate">Deathrate</option>
+                    <option value="GDP ($ per capita)" selected="selected">GDP per Capita</option>
+                    <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
+                    <option value="Literacy (%)">Literacy Rate</option>
+                    <!-- <option value="Net migration">Net Migration</option> -->
+                    <option value="Population">Population</option>
+                    <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
+                  </select>
+                </td>
+                <td>
+                  <input id="xLog" type="Button" value="Switch to Log X Axis" onclick="logXAxis()"
+                    style="width: 150px; border-radius: 5px;" />
+                </td>
+              </tr>
+            </div>
+            <div style="display: flex; flex-direction: row;">
+              <tr>
+                <td>
+                  <label style="width: 55px; margin: 0 10px;">Y-Axis:</label>
+                  <select id="ySelector" onChange="changeYSelection(event)" style="margin-right: 10px;">
+                    <option value="Area (sq. km.)">Area (per sq km)</option>
+                    <option value="Birthrate">Birthrate</option>
+                    <option value="Deathrate">Deathrate</option>
+                    <option value="GDP ($ per capita)">GDP per Capita</option>
+                    <option value="Infant mortality (per 1000 births)">Infant Mortality (per 1000 births)</option>
+                    <option value="Literacy (%)">Literacy Rate</option>
+                    <!-- <option value="Net migration">Net Migration</option> -->
+                    <option value="Population" selected="selected">Population</option>
+                    <option value="Pop. Density (per sq. km.)">Pop. Density (per sq km)</option>
+                  </select>
+                </td>
+                <td>
+                  <input id="yLog" type="Button" value="Switch to Log Y Axis" onclick="logYAxis()"
+                    style="width: 150px; border-radius: 5px;" />
+                </td>
+              </tr>
+            </div>
+          </div>
+        </div>
         <svg id="scat_plot" width="600" height="350">
           <rect id="scat_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
             style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
@@ -95,13 +112,25 @@
         </svg>
         <div style="margin-left: 42%">
           <h4 style="margin: 0px 55%; width: 100%; text-align: center;">World Map</h4>
-          <svg id="world_map" width="390" height="260"></svg>
+          <svg id="world_map" width="360" height="240"></svg>
         </div>
       </div>
       <div style="position: relative; margin-right: 10%">
-        <!-- ====================== POPULATION PLOT STUFF BELOW ====================== -->
-        <svg id="population_plot" class="brush_container" width="800" height="600">
-          <rect id="population_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+        <!-- ====================== AREA PLOT STUFF BELOW ====================== -->
+        <svg id="area_plot" class="brush_container" width="800" height="600">
+          <rect id="area_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+          </rect>
+        </svg>
+        <!-- ====================== BIRTH PLOT STUFF BELOW ====================== -->
+        <svg id="birth_plot" class="brush_container" width="800" height="600">
+          <rect id="birth_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+          </rect>
+        </svg>
+        <!-- ====================== DEATH PLOT STUFF BELOW ====================== -->
+        <svg id="death_plot" class="brush_container" width="800" height="600">
+          <rect id="death_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
             style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
           </rect>
         </svg>
@@ -111,49 +140,33 @@
             style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
           </rect>
         </svg>
-        <!-- ====================== AREA PLOT STUFF BELOW ====================== -->
-        <svg id="area_plot" class="brush_container" width="800" height="600">
-          <rect id="area_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
-            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
-          </rect>
-        </svg>
-
-        <!-- ====================== BIRTH PLOT STUFF BELOW ====================== -->
-        <svg id="birth_plot" class="brush_container" width="800" height="600">
-          <rect id="birth_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
-            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
-          </rect>
-        </svg>
       </div>
+
       <div style="position: relative; margin-right: 10%;">
-        <!-- ====================== DEATH PLOT STUFF BELOW ====================== -->
-        <svg id="death_plot" class="brush_container" width="800" height="600">
-          <rect id="death_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
-            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
-          </rect>
-        </svg>
-
-        <!-- ====================== LITERACY PLOT STUFF BELOW ====================== -->
-        <svg id="literacy_plot" class="brush_container" width="800" height="600">
-          <rect id="literacy_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
-            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
-          </rect>
-        </svg>
-
-        <!-- ====================== POP DENSITY PLOT STUFF BELOW ====================== -->
-        <svg id="popdensity_plot" class="brush_container" width="800" height="600">
-          <rect id="popdensity_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
-            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
-          </rect>
-        </svg>
-
         <!-- ====================== INFANTMORTALITY PLOT STUFF BELOW ====================== -->
         <svg id="infantmortality_plot" class="brush_container" width="800" height="600">
           <rect id="infantmortality_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
             style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
           </rect>
         </svg>
-
+        <!-- ====================== LITERACY PLOT STUFF BELOW ====================== -->
+        <svg id="literacy_plot" class="brush_container" width="800" height="600">
+          <rect id="literacy_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+          </rect>
+        </svg>
+        <!-- ====================== POPULATION PLOT STUFF BELOW ====================== -->
+        <svg id="population_plot" class="brush_container" width="800" height="600">
+          <rect id="population_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+          </rect>
+        </svg>
+        <!-- ====================== POP DENSITY PLOT STUFF BELOW ====================== -->
+        <svg id="popdensity_plot" class="brush_container" width="800" height="600">
+          <rect id="popdensity_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
+            style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
+          </rect>
+        </svg>
       </div>
     </div>
 
@@ -166,8 +179,8 @@
       // Map and projection
       let path = d3.geoPath();
       let projection = d3.geoMercator()
-        .scale(60)
-        .center([275, -55]);
+        .scale(55)
+        .center([315, -65]);
       // .translate([-width / 2, 0]);
 
       // Data and color scale
@@ -808,7 +821,7 @@
 
           svg_birth.append("g")
             .attr("transform", `translate(0,${birth_verticalOffset - birth_marginBottom})`)
-            .call(d3.axisBottom(xScaleBirth).ticks(5, ",.0f").tickSize(10));
+            .call(d3.axisBottom(xScaleBirth).ticks(10, ",.0f").tickSize(10));
 
           // Append x-axis label
           // svg_birth.append("text")
@@ -913,7 +926,7 @@
 
           svg_death.append("g")
             .attr("transform", `translate(0,${death_verticalOffset - death_marginBottom})`)
-            .call(d3.axisBottom(xScaleDeath).ticks(5, ",.0f").tickSize(10));
+            .call(d3.axisBottom(xScaleDeath).ticks(10, ",.0f").tickSize(10));
 
           // Append x-axis label
           // svg_death.append("text")
@@ -1004,7 +1017,7 @@
         let literacy_marginLeft = 20;
         let literacy_radius = 2;
         let literacy_padding = 0.1;
-        
+
         let xScaleLiteracy = d3.scaleLinear()
           .domain(d3.extent(Object.values(countriesData).map(d => +d["Literacy (%)"])))
           .range([literacy_marginLeft, width - literacy_marginRight])
@@ -1232,7 +1245,7 @@
 
           svg_infantmortality.append("g")
             .attr("transform", `translate(0,${infantmortality_verticalOffset - infantmortality_marginBottom})`)
-            .call(d3.axisBottom(xScaleInfantmortality).ticks(5, ",.0f").tickSize(10));
+            .call(d3.axisBottom(xScaleInfantmortality).ticks(10, ",.0f").tickSize(10));
 
           // Append x-axis label
           // svg_infantmortality.append("text")
