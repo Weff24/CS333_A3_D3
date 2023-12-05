@@ -46,7 +46,7 @@
   <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
   <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 
-  <div id="vis_container">
+  <div id="vis_container" style="height: 80vh;">
     <h3 style="width: 100vw; text-align: center; margin: 0; text-decoration: underline;">Countries of the World
       Interactive Visualization</h3>
 
@@ -105,7 +105,7 @@
             </div>
           </div>
         </div>
-        <div style="width: 100%; border-right: 2px solid black">
+        <div style="margin-top: 3px; width: 100%; border-right: 2px solid black">
           <svg id="scat_plot" width="600" height="350">
             <rect id="scat_rect" rx="4" ry="4" x="0" y="0" width="0" height="0" class="selection-rect"
               style="fill: rgba(185, 177, 177, 0.25); stroke: rgb(82, 82, 82); stroke-width: 2.5;">
@@ -215,7 +215,7 @@
       d3.queue()
         .defer(d3.json, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
         // .defer(d3.csv, "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world_population.csv", function (d) { data.set(d.code, +d.pop); })
-        .defer(d3.csv, "countries of the world very very clean.csv", function (d) {
+        .defer(d3.csv, "countries of the world cleaned.csv", function (d) {
           let countryNames = d["Country"].replace(/[$"]|\s+$/g, "").trim()
           let countryAltNames = d["Country_cleaned_name"].replace(/[$"]|\s+$/g, "").trim()
 
@@ -1421,7 +1421,7 @@
           // Append title label
           titleLabel = svg3.append("text")
             .attr("x", widthScat / 2 + 50)
-            .attr("y", "16") // Adjust the position as needed
+            .attr("y", 0) // Adjust the position as needed
             .style("font-size", "20px")
             .style("font-weight", "bold")
             .style("text-anchor", "middle")
@@ -1466,7 +1466,7 @@
               .range([0, widthScat - xPadding]);
           }
           xAxis.transition()
-            .duration(1500)
+            .duration(1000)
             .attr("transform", `translate(${xPadding},${heightScat - yPadding})`)
             .call(d3.axisBottom(xAxisScat).ticks(10, ",.0f").tickSize(10));
 
@@ -1487,7 +1487,7 @@
               .range([heightScat, yPadding]);
           }
           yAxis.transition()
-            .duration(1500)
+            .duration(1000)
             .attr("transform", `translate(${xPadding},${-yPadding})`)
             .call(d3.axisLeft(yAxisScat).ticks(10, ",.0f").tickSize(10));
 
@@ -1503,7 +1503,7 @@
           svg3.selectAll("circle")
             .data(Object.values(countriesData).map((d, i, data) => ({ data: d, x: +xAxisScat(d[xScatVar]), y: +yAxisScat(d[yScatVar]) })))
             .transition()
-            .duration(1500)
+            .duration(1000)
             .attr("cx", d => d.x)
             .attr("cy", d => d.y)
             .attr("r", 3)
